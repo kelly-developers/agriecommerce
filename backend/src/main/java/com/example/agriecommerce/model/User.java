@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.boot.autoconfigure.amqp.RabbitConnectionDetails;
 
-import javax.persistence.*;
-import javax.validation.constraints.*;
+//import javax.persistence.*;
+//import javax.validation.constraints.*;
 import java.util.*;
 
 @Entity
