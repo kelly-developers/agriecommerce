@@ -1,6 +1,6 @@
 package com.example.agriecommerce.model;
 
-import javax.persistence.*;
+//import javax.persistence.*;
 
 @Entity
 @Table(name = "cart_items")

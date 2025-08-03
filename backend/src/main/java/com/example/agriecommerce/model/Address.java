@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import javax.persistence.*;
-import javax.validation.constraints.*;
+//import javax.persistence.*;
+//import javax.validation.constraints.*;
 
 @Entity
 @Table(name = "addresses")
