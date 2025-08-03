@@ -1,5 +1,9 @@
 package com.example.agriecommerce.model;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import javax.persistence.*;
 import javax.validation.constraints.*;
 
