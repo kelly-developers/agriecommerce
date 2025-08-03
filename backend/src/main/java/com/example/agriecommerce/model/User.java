@@ -94,10 +94,10 @@ public class User {
     // ...
 }
 
-enum UserRole {
-    USER, ADMIN, FARMER
-}
-
-enum UserStatus {
-    ACTIVE, INACTIVE, BANNED
-}
+//enum UserRole {
+//    USER, ADMIN, FARMER
+//}
+//
+//enum UserStatus {
+//    ACTIVE, INACTIVE, BANNED
+//}

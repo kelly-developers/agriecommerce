@@ -94,6 +94,6 @@ public class Product {
     // ...
 }
 
-enum ProductStatus {
-    ACTIVE, INACTIVE, OUT_OF_STOCK
-}
+//enum ProductStatus {
+//    ACTIVE, INACTIVE, OUT_OF_STOCK
+//}
