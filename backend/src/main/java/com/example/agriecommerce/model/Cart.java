@@ -1,9 +1,6 @@
 package com.example.agriecommerce.model;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import javax.persistence.*;
 import java.util.*;
