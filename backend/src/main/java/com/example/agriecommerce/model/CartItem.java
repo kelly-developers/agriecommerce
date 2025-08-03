@@ -2,6 +2,11 @@ package com.example.agriecommerce.model;
 
 //import javax.persistence.*;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+
+import java.util.Date;
+
 @Entity
 @Table(name = "cart_items")
 public class CartItem {
