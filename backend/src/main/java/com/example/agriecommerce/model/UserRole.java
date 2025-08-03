@@ -1,7 +1,5 @@
 package com.example.agriecommerce.model;
 
-public enum UserRole {
-    USER,
-    ADMIN,
-    FARMER
+enum UserRole {
+    USER, ADMIN, FARMER
 }

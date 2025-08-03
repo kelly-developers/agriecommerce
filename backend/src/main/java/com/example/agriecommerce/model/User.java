@@ -1,28 +1,15 @@
 package com.example.agriecommerce.model;
 
-package com.example.agriecommerce.model;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-
+import jakarta.persistence.*;
+import jakarta.persistence.criteria.Order;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.boot.autoconfigure.amqp.RabbitConnectionDetails;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-
+import javax.persistence.*;
+import javax.validation.constraints.*;
+import java.util.*;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -62,7 +49,7 @@ public class User {
     private UserStatus status = UserStatus.ACTIVE;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Address> addresses = new HashSet<>();
+    private Set<RabbitConnectionDetails.Address> addresses = new HashSet<>();
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Cart cart;
@@ -90,14 +77,4 @@ public class User {
         this.phone = phone;
     }
 
-    // Getters and setters
-    // ...
 }
-
-//enum UserRole {
-//    USER, ADMIN, FARMER
-//}
-//
-//enum UserStatus {
-//    ACTIVE, INACTIVE, BANNED
-//}
