@@ -4,9 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-//import javax.persistence.*;
-//import javax.validation.constraints.*;
-
 @Entity
 @Table(name = "addresses")
 public class Address {
@@ -48,6 +45,5 @@ public class Address {
         this.county = county;
     }
 
-    // Getters and setters
-    // ...
+    // Add getters and setters for all fields
 }

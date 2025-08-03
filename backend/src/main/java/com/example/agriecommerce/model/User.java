@@ -1,14 +1,9 @@
 package com.example.agriecommerce.model;
 
 import jakarta.persistence.*;
-import jakarta.persistence.criteria.Order;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.springframework.boot.autoconfigure.amqp.RabbitConnectionDetails;
-
-//import javax.persistence.*;
-//import javax.validation.constraints.*;
 import java.util.*;
 
 @Entity
@@ -49,7 +44,7 @@ public class User {
     private UserStatus status = UserStatus.ACTIVE;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<RabbitConnectionDetails.Address> addresses = new HashSet<>();
+    private Set<Address> addresses = new HashSet<>();
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Cart cart;
@@ -77,4 +72,5 @@ public class User {
         this.phone = phone;
     }
 
+    // Add getters and setters for all fields
 }
