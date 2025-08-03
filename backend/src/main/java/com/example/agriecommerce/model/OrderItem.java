@@ -1,6 +1,9 @@
 package com.example.agriecommerce.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
+//import javax.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
