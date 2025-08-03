@@ -3,10 +3,12 @@ package com.example.agriecommerce.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import javax.persistence.*;
-import javax.validation.constraints.*;
+//import javax.persistence.*;
+//import javax.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "products")
