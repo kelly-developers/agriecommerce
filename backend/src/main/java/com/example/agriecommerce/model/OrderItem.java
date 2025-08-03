@@ -2,8 +2,6 @@ package com.example.agriecommerce.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-
-//import javax.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
@@ -36,18 +34,72 @@ public class OrderItem {
     @DecimalMin("0.00")
     private BigDecimal totalPrice;
 
-    // Constructors, getters, and setters
+    // Constructors
     public OrderItem() {}
 
     public OrderItem(Order order, Product product, Integer quantity) {
         this.order = order;
         this.product = product;
-        this.productName = product.getName();
-        this.productPrice = product.getPrice();
+        this.productName = product.getName(); // Now this will work
+        this.productPrice = product.getPrice(); // Now this will work
         this.quantity = quantity;
         this.totalPrice = productPrice.multiply(BigDecimal.valueOf(quantity));
     }
 
-    // Getters and setters
-    // ...
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public BigDecimal getProductPrice() {
+        return productPrice;
+    }
+
+    public void setProductPrice(BigDecimal productPrice) {
+        this.productPrice = productPrice;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
+    }
 }
