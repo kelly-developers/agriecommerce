@@ -19,9 +19,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
@@ -30,23 +32,27 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
 
     public AuthResponse authenticateUser(LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getEmail(),
-                        loginRequest.getPassword()
-                )
-        );
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getEmail(),
+                            loginRequest.getPassword()
+                    )
+            );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
-        String accessToken = tokenProvider.generateToken(userPrincipal);
-        String refreshToken = refreshTokenService.createRefreshToken(userPrincipal.getId()).getToken();
+            String accessToken = tokenProvider.generateToken(userPrincipal);
+            String refreshToken = refreshTokenService.createRefreshToken(userPrincipal.getId()).getToken();
 
-        User user = userRepository.findById(userPrincipal.getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userRepository.findById(userPrincipal.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return AuthResponse.of(user, accessToken, refreshToken);
+            return AuthResponse.of(user, accessToken, refreshToken);
+        } catch (Exception e) {
+            throw new BadRequestException("Invalid email or password");
+        }
     }
 
     public AuthResponse registerUser(RegisterRequest registerRequest) {
@@ -54,17 +60,17 @@ public class AuthService {
             throw new BadRequestException("Email address already in use");
         }
 
-        User user = new User();
-        user.setFirstName(registerRequest.getFirstName());
-        user.setLastName(registerRequest.getLastName());
-        user.setEmail(registerRequest.getEmail());
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setPhone(registerRequest.getPhone());
-        user.setRole(UserRole.USER);
+        User user = User.builder()
+                .firstName(registerRequest.getFirstName())
+                .lastName(registerRequest.getLastName())
+                .email(registerRequest.getEmail())
+                .password(passwordEncoder.encode(registerRequest.getPassword()))
+                .phone(registerRequest.getPhone())
+                .role(UserRole.USER)
+                .build();
 
         User savedUser = userRepository.save(user);
 
-        // Create UserPrincipal for token generation
         UserPrincipal userPrincipal = UserPrincipal.create(savedUser);
         String accessToken = tokenProvider.generateToken(userPrincipal);
         String refreshToken = refreshTokenService.createRefreshToken(savedUser.getId()).getToken();
@@ -80,8 +86,14 @@ public class AuthService {
                 ));
 
         refreshTokenService.verifyExpiration(refreshToken);
-        String accessToken = tokenProvider.generateTokenFromUsername(refreshToken.getUser().getEmail());
 
-        return AuthResponse.of(refreshToken.getUser(), accessToken, refreshToken.getToken());
+        // Get user details from the refresh token
+        User user = refreshToken.getUser();
+        UserPrincipal userPrincipal = UserPrincipal.create(user);
+
+        // Generate new access token
+        String accessToken = tokenProvider.generateToken(userPrincipal);
+
+        return AuthResponse.of(user, accessToken, refreshToken.getToken());
     }
 }
