@@ -13,4 +13,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByCategory(String category, Pageable pageable);
     List<Product> findByCategory(String category);
     List<Product> findByStockLessThan(Integer stock);
+    long countByStockLessThan(Integer stock);
 }
