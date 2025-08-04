@@ -1,9 +1,13 @@
 package com.example.agriecommerce.service;
 
 import com.example.agriecommerce.dto.request.LoginRequest;
+import com.example.agriecommerce.dto.request.RefreshTokenRequest;
 import com.example.agriecommerce.dto.request.RegisterRequest;
 import com.example.agriecommerce.dto.response.AuthResponse;
+import com.example.agriecommerce.dto.response.UserResponse;
 import com.example.agriecommerce.exception.BadRequestException;
+import com.example.agriecommerce.exception.TokenRefreshException;
+import com.example.agriecommerce.model.RefreshToken;
 import com.example.agriecommerce.model.User;
 import com.example.agriecommerce.model.UserRole;
 import com.example.agriecommerce.repository.UserRepository;
@@ -40,11 +44,10 @@ public class AuthService {
         String accessToken = tokenProvider.generateToken(authentication);
         String refreshToken = refreshTokenService.createRefreshToken(userPrincipal.getId()).getToken();
 
-        return new AuthResponse(
-                userRepository.findById(userPrincipal.getId()).orElseThrow(),
-                accessToken,
-                refreshToken
-        );
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return AuthResponse.of(user, accessToken, refreshToken);
     }
 
     public AuthResponse registerUser(RegisterRequest registerRequest) {
@@ -70,6 +73,19 @@ public class AuthService {
         String accessToken = tokenProvider.generateToken(authentication);
         String refreshToken = refreshTokenService.createRefreshToken(savedUser.getId()).getToken();
 
-        return new AuthResponse(savedUser, accessToken, refreshToken);
+        return AuthResponse.of(savedUser, accessToken, refreshToken);
+    }
+
+    public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
+        RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenRequest.getRefreshToken())
+                .orElseThrow(() -> new TokenRefreshException(
+                        refreshTokenRequest.getRefreshToken(),
+                        "Refresh token not found"
+                ));
+
+        refreshTokenService.verifyExpiration(refreshToken);
+        String accessToken = tokenProvider.generateTokenFromUsername(refreshToken.getUser().getEmail());
+
+        return AuthResponse.of(refreshToken.getUser(), accessToken, refreshToken.getToken());
     }
 }

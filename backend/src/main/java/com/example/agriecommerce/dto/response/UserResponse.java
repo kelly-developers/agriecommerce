@@ -10,14 +10,14 @@ public class UserResponse {
     private String lastName;
     private String email;
     private String phone;
-    private String role;
 
-    public UserResponse(User user) {
-        this.id = user.getId();
-        this.firstName = user.getFirstName();
-        this.lastName = user.getLastName();
-        this.email = user.getEmail();
-        this.phone = user.getPhone();
-        this.role = user.getRole().name();
+    public static UserResponse from(User user) {
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setFirstName(user.getFirstName());
+        response.setLastName(user.getLastName());
+        response.setEmail(user.getEmail());
+        response.setPhone(user.getPhone());
+        return response;
     }
 }
