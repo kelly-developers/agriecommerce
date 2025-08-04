@@ -80,7 +80,8 @@ public class OrderService {
     }
 
     public Page<OrderResponse> getUserOrders(Long userId, Pageable pageable) {
-        return orderRepository.findByUserId(userId, pageable)
+        return orderRepository.findByUser(userRepository.findById(userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId)), pageable)
                 .map(this::mapToOrderResponse);
     }
 
