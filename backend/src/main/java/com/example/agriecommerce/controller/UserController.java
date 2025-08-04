@@ -3,6 +3,7 @@ package com.example.agriecommerce.controller;
 import com.example.agriecommerce.dto.request.UserUpdateRequest;
 import com.example.agriecommerce.dto.response.UserResponse;
 import com.example.agriecommerce.model.UserStatus;
+import com.example.agriecommerce.security.UserPrincipal;
 import com.example.agriecommerce.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
