@@ -21,7 +21,7 @@ public class UserService {
     public UserResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        return new UserResponse(user);
+        return UserResponse.from(user);
     }
 
     public UserResponse updateUserProfile(Long userId, UserUpdateRequest updateRequest) {
@@ -42,12 +42,12 @@ public class UserService {
         }
 
         User updatedUser = userRepository.save(user);
-        return new UserResponse(updatedUser);
+        return UserResponse.from(updatedUser);
     }
 
     public Page<UserResponse> getAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable)
-                .map(UserResponse::new);
+                .map(UserResponse::from);
     }
 
     public UserResponse updateUserStatus(Long userId, UserStatus status) {
@@ -55,6 +55,6 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         user.setStatus(status);
         User updatedUser = userRepository.save(user);
-        return new UserResponse(updatedUser);
+        return UserResponse.from(updatedUser);
     }
 }
