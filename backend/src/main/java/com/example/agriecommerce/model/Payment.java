@@ -4,11 +4,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 
-//import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date;
 
+@Data
 @Entity
 @Table(name = "payments")
 public class Payment {
@@ -49,7 +50,6 @@ public class Payment {
     @Column(name = "payment_date")
     private Date paymentDate = new Date();
 
-    // Constructors, getters, and setters
     public Payment() {}
 
     public Payment(Order order, User user, BigDecimal amount, PaymentMethod paymentMethod) {
@@ -58,10 +58,4 @@ public class Payment {
         this.amount = amount;
         this.paymentMethod = paymentMethod;
     }
-
-    // Getters and setters
-    // ...
 }
-
-
-

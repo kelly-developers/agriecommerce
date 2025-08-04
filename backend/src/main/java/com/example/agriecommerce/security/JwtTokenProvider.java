@@ -24,31 +24,23 @@ public class JwtTokenProvider {
 
     public String generateToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-
-        return Jwts.builder()
-                .setSubject(userPrincipal.getEmail())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + jwtConfig.getExpirationMs()))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+        return buildToken(userPrincipal.getEmail(), jwtConfig.getExpirationMs());
     }
 
-    public String generateTokenFromEmail(String email) {
-        return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + jwtConfig.getExpirationMs()))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+    public String generateTokenFromUsername(String username) {
+        return buildToken(username, jwtConfig.getExpirationMs());
     }
 
     public String generateRefreshToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        return buildToken(userPrincipal.getEmail(), jwtConfig.getRefreshExpirationMs());
+    }
 
+    private String buildToken(String subject, long expirationMs) {
         return Jwts.builder()
-                .setSubject(userPrincipal.getEmail())
+                .setSubject(subject)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + jwtConfig.getRefreshExpirationMs()))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }

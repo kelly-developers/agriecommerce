@@ -35,8 +35,7 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
         payment.setPaymentDate(new Date());
 
-        // In a real application, you would integrate with a payment gateway here
-        // For demo purposes, we'll simulate a successful payment
+        // Simulate payment processing
         if (paymentRequest.getPaymentMethod() == PaymentMethod.MPESA) {
             payment.setTransactionId("MPESA-" + System.currentTimeMillis());
             payment.setReceiptNumber("RCPT-" + System.currentTimeMillis());
