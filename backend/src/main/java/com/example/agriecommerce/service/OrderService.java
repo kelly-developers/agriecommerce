@@ -57,19 +57,21 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         // Convert cart items to order items
-        for (CartItem cartItem : cart.getItems()) {
+        for (CartResponse.CartItemResponse cartItemResponse : cart.getItems()) {
+            Product product = productRepository.findById(cartItemResponse.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product", "id", cartItemResponse.getProductId()));
+
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(savedOrder);
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setProductName(cartItem.getProduct().getName());
-            orderItem.setProductPrice(cartItem.getProduct().getPrice());
-            orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setTotalPrice(cartItem.getProduct().getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+            orderItem.setProduct(product);
+            orderItem.setProductName(cartItemResponse.getProductName());
+            orderItem.setProductPrice(cartItemResponse.getProductPrice());
+            orderItem.setQuantity(cartItemResponse.getQuantity());
+            orderItem.setTotalPrice(cartItemResponse.getProductPrice().multiply(BigDecimal.valueOf(cartItemResponse.getQuantity())));
             orderItemRepository.save(orderItem);
 
             // Update product stock
-            Product product = cartItem.getProduct();
-            product.setStock(product.getStock() - cartItem.getQuantity());
+            product.setStock(product.getStock() - cartItemResponse.getQuantity());
             productRepository.save(product);
         }
 
@@ -105,6 +107,16 @@ public class OrderService {
     }
 
     private OrderResponse mapToOrderResponse(Order order) {
+        List<OrderResponse.OrderItem> orderItems = orderItemRepository.findByOrder(order).stream()
+                .map(item -> new OrderResponse.OrderItem(
+                        item.getProduct().getId(),
+                        item.getProductName(),
+                        item.getProductPrice(),
+                        item.getQuantity(),
+                        item.getTotalPrice()
+                ))
+                .collect(Collectors.toList());
+
         return OrderResponse.builder()
                 .id(order.getId())
                 .customerInfo(new OrderResponse.CustomerInfo(
@@ -120,15 +132,7 @@ public class OrderService {
                         order.getDeliveryPostalCode(),
                         order.getDeliveryNotes()
                 ))
-                .items(orderItemRepository.findByOrder(order).stream()
-                        .map(item -> new OrderResponse.OrderItem(
-                                item.getProduct().getId(),
-                                item.getProductName(),
-                                item.getProductPrice(),
-                                item.getQuantity(),
-                                item.getTotalPrice()
-                        ))
-                        .collect(Collectors.toList()))
+                .items(orderItems)
                 .subtotal(order.getSubtotal())
                 .deliveryFee(order.getDeliveryFee())
                 .total(order.getTotal())

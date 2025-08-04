@@ -1,8 +1,6 @@
 package com.example.agriecommerce.model;
 
 import jakarta.persistence.*;
-
-//import javax.persistence.*;
 import java.util.*;
 
 @Entity
@@ -25,7 +23,6 @@ public class Cart {
     @Column(name = "updated_at")
     private Date updatedAt = new Date();
 
-    // Constructors, getters, and setters
     public Cart() {}
 
     public Cart(User user) {
@@ -33,5 +30,43 @@ public class Cart {
     }
 
     // Getters and setters
-    // ...
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Set<CartItem> getCartItems() {
+        return cartItems;
+    }
+
+    public void setCartItems(Set<CartItem> cartItems) {
+        this.cartItems = cartItems;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
