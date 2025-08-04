@@ -1,5 +1,5 @@
 package com.example.agriecommerce.model;
 
-enum PaymentStatus {
+public enum PaymentStatus {
     PENDING, SUCCESS, FAILED, CANCELLED, REFUNDED
 }
