@@ -2,16 +2,18 @@ package com.example.agriecommerce.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-
-//import javax.persistence.*;
+import lombok.Data;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
+@Data
 @Entity
 @Table(name = "orders")
 public class Order {
     @Id
-    private String id; // Custom ID like ORD-123456
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -79,7 +81,7 @@ public class Order {
     @Column(name = "order_date")
     private Date orderDate = new Date();
 
-    // Constructors, getters, and setters
+    // Constructors
     public Order() {}
 
     public Order(String id, User user, BigDecimal subtotal, BigDecimal deliveryFee, BigDecimal total) {
@@ -90,7 +92,14 @@ public class Order {
         this.total = total;
     }
 
-    // Getters and setters
-    // ...
-}
+    // Custom methods
+    public void addOrderItem(OrderItem orderItem) {
+        orderItems.add(orderItem);
+        orderItem.setOrder(this);
+    }
 
+    public void removeOrderItem(OrderItem orderItem) {
+        orderItems.remove(orderItem);
+        orderItem.setOrder(null);
+    }
+}
