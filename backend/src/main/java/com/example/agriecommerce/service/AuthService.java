@@ -4,7 +4,6 @@ import com.example.agriecommerce.dto.request.LoginRequest;
 import com.example.agriecommerce.dto.request.RefreshTokenRequest;
 import com.example.agriecommerce.dto.request.RegisterRequest;
 import com.example.agriecommerce.dto.response.AuthResponse;
-import com.example.agriecommerce.dto.response.UserResponse;
 import com.example.agriecommerce.exception.BadRequestException;
 import com.example.agriecommerce.exception.TokenRefreshException;
 import com.example.agriecommerce.model.RefreshToken;
@@ -41,7 +40,7 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
-        String accessToken = tokenProvider.generateToken(authentication);
+        String accessToken = tokenProvider.generateToken(userPrincipal);
         String refreshToken = refreshTokenService.createRefreshToken(userPrincipal.getId()).getToken();
 
         User user = userRepository.findById(userPrincipal.getId())
@@ -65,12 +64,9 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                savedUser.getEmail(),
-                registerRequest.getPassword()
-        );
-
-        String accessToken = tokenProvider.generateToken(authentication);
+        // Create UserPrincipal for token generation
+        UserPrincipal userPrincipal = UserPrincipal.create(savedUser);
+        String accessToken = tokenProvider.generateToken(userPrincipal);
         String refreshToken = refreshTokenService.createRefreshToken(savedUser.getId()).getToken();
 
         return AuthResponse.of(savedUser, accessToken, refreshToken);
