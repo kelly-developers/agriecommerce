@@ -1,11 +1,11 @@
 package com.example.agriecommerce.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
-//import javax.persistence.*;
 import java.time.Instant;
 
+@Data
 @Entity
 @Table(name = "refresh_tokens")
 public class RefreshToken {
@@ -17,20 +17,9 @@ public class RefreshToken {
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    @NotBlank
+    @Column(nullable = false, unique = true)
     private String token;
 
+    @Column(nullable = false)
     private Instant expiryDate;
-
-    // Constructors, getters, and setters
-    public RefreshToken() {}
-
-    public RefreshToken(User user, String token, Instant expiryDate) {
-        this.user = user;
-        this.token = token;
-        this.expiryDate = expiryDate;
-    }
-
-    // Getters and setters
-    // ...
 }
