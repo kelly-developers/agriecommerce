@@ -24,29 +24,58 @@ public class OrderResponse {
     @Data
     @Builder
     public static class CustomerInfo {
-        private String firstName;
-        private String lastName;
-        private String email;
-        private String phone;
+        public String firstName;
+        public String lastName;
+        public String email;
+        public String phone;
+
+        public CustomerInfo() {}
+
+        public CustomerInfo(String firstName, String lastName, String email, String phone) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+            this.phone = phone;
+        }
     }
 
     @Data
     @Builder
     public static class DeliveryInfo {
-        private String address;
-        private String city;
-        private String county;
-        private String postalCode;
-        private String deliveryNotes;
+        public String address;
+        public String city;
+        public String county;
+        public String postalCode;
+        public String deliveryNotes;
+
+        public DeliveryInfo() {}
+
+        public DeliveryInfo(String address, String city, String county, String postalCode, String deliveryNotes) {
+            this.address = address;
+            this.city = city;
+            this.county = county;
+            this.postalCode = postalCode;
+            this.deliveryNotes = deliveryNotes;
+        }
     }
 
     @Data
     @Builder
     public static class OrderItem {
-        private Long productId;
-        private String productName;
-        private BigDecimal productPrice;
-        private Integer quantity;
-        private BigDecimal totalPrice;
+        public Long productId;
+        public String productName;
+        public BigDecimal productPrice;
+        public Integer quantity;
+        public BigDecimal totalPrice;
+
+        public OrderItem() {}
+
+        public OrderItem(Long productId, String productName, BigDecimal productPrice, Integer quantity, BigDecimal totalPrice) {
+            this.productId = productId;
+            this.productName = productName;
+            this.productPrice = productPrice;
+            this.quantity = quantity;
+            this.totalPrice = totalPrice;
+        }
     }
 }
