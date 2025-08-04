@@ -39,13 +39,13 @@ public class AddressService {
         address.setCounty(addressRequest.getCounty());
         address.setPostalCode(addressRequest.getPostalCode());
         address.setAdditionalInfo(addressRequest.getAdditionalInfo());
-        address.setDefault(addressRequest.isDefault());
+        address.setIsDefault(addressRequest.isDefault());
 
         // If this is set as default, unset any existing default address
         if (addressRequest.isDefault()) {
             addressRepository.findByUserAndIsDefault(user, true)
                     .ifPresent(addr -> {
-                        addr.setDefault(false);
+                        addr.setIsDefault(false);
                         addressRepository.save(addr);
                     });
         }
@@ -65,13 +65,13 @@ public class AddressService {
         address.setAdditionalInfo(addressRequest.getAdditionalInfo());
 
         // Handle default address change
-        if (addressRequest.isDefault() && !address.isDefault()) {
+        if (addressRequest.isDefault() && !address.getIsDefault()) {
             addressRepository.findByUserAndIsDefault(address.getUser(), true)
                     .ifPresent(addr -> {
-                        addr.setDefault(false);
+                        addr.setIsDefault(false);
                         addressRepository.save(addr);
                     });
-            address.setDefault(true);
+            address.setIsDefault(true);
         }
 
         Address updatedAddress = addressRepository.save(address);
@@ -92,7 +92,7 @@ public class AddressService {
                 .county(address.getCounty())
                 .postalCode(address.getPostalCode())
                 .additionalInfo(address.getAdditionalInfo())
-                .isDefault(address.isDefault())
+                .isDefault(address.getIsDefault())
                 .build();
     }
 }

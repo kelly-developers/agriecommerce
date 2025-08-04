@@ -3,9 +3,13 @@ package com.example.agriecommerce.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "addresses")
+@Getter
+@Setter
 public class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,7 +39,6 @@ public class Address {
 
     private Boolean isDefault = false;
 
-    // Constructors, getters, and setters
     public Address() {}
 
     public Address(User user, String street, String city, String county) {
@@ -44,6 +47,4 @@ public class Address {
         this.city = city;
         this.county = county;
     }
-
-    // Add getters and setters for all fields
 }

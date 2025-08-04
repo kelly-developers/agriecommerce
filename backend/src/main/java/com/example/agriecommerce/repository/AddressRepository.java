@@ -11,6 +11,8 @@ import java.util.Optional;
 @Repository
 public interface AddressRepository extends JpaRepository<Address, Long> {
     List<Address> findByUser(User user);
+
     Optional<Address> findByIdAndUserId(Long id, Long userId);
-    Optional<Address> findByUserAndIsDefault(User user, boolean isDefault);
+
+    Optional<Address> findByUserAndIsDefault(User user, Boolean isDefault);
 }

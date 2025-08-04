@@ -2,6 +2,7 @@ package com.example.agriecommerce.controller;
 
 import com.example.agriecommerce.dto.request.AddressRequest;
 import com.example.agriecommerce.dto.response.AddressResponse;
+import com.example.agriecommerce.security.UserPrincipal;
 import com.example.agriecommerce.service.AddressService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
