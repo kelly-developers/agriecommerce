@@ -5,6 +5,7 @@ import com.example.agriecommerce.dto.request.RegisterRequest;
 import com.example.agriecommerce.dto.response.AuthResponse;
 import com.example.agriecommerce.exception.BadRequestException;
 import com.example.agriecommerce.model.User;
+import com.example.agriecommerce.model.UserRole;
 import com.example.agriecommerce.repository.UserRepository;
 import com.example.agriecommerce.security.JwtTokenProvider;
 import com.example.agriecommerce.security.UserPrincipal;
