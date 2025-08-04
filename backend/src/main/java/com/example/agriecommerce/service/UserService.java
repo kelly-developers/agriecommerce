@@ -4,6 +4,7 @@ import com.example.agriecommerce.dto.request.UserUpdateRequest;
 import com.example.agriecommerce.dto.response.UserResponse;
 import com.example.agriecommerce.exception.ResourceNotFoundException;
 import com.example.agriecommerce.model.User;
+import com.example.agriecommerce.model.UserStatus;
 import com.example.agriecommerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
