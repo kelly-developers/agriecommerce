@@ -1,7 +1,6 @@
 package com.example.agriecommerce.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
 @Entity
@@ -34,19 +33,7 @@ public class OrderItem {
     @DecimalMin("0.00")
     private BigDecimal totalPrice;
 
-    // Constructors
-    public OrderItem() {}
-
-    public OrderItem(Order order, Product product, Integer quantity) {
-        this.order = order;
-        this.product = product;
-        this.productName = product.getName(); // Now this will work
-        this.productPrice = product.getPrice(); // Now this will work
-        this.quantity = quantity;
-        this.totalPrice = productPrice.multiply(BigDecimal.valueOf(quantity));
-    }
-
-    // Getters and Setters
+    // Getters and setters
     public Long getId() {
         return id;
     }
