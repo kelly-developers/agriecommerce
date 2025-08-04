@@ -1,5 +1,5 @@
 package com.example.agriecommerce.model;
 
-enum UserStatus {
+public enum UserStatus {
     ACTIVE, INACTIVE, BANNED
 }
