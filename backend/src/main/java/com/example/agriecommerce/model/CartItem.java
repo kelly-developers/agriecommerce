@@ -1,11 +1,9 @@
 package com.example.agriecommerce.model;
 
-//import javax.persistence.*;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 
-import java.util.Date;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "cart_items")
@@ -25,18 +23,36 @@ public class CartItem {
     @Min(1)
     private Integer quantity;
 
-    @Column(name = "created_at")
-    private Date createdAt = new Date();
-
-    // Constructors, getters, and setters
-    public CartItem() {}
-
-    public CartItem(Cart cart, Product product, Integer quantity) {
-        this.cart = cart;
-        this.product = product;
-        this.quantity = quantity;
+    // Getters and setters
+    public Long getId() {
+        return id;
     }
 
-    // Getters and setters
-    // ...
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Cart getCart() {
+        return cart;
+    }
+
+    public void setCart(Cart cart) {
+        this.cart = cart;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
 }

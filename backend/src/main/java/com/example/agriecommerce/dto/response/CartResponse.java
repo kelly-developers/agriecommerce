@@ -11,7 +11,17 @@ import java.util.List;
 public class CartResponse {
     private Long id;
     private Long userId;
-    private List<CartItem> items;
+    private List<CartItemResponse> items;
     private Integer totalItems;
     private BigDecimal totalPrice;
+
+    @Data
+    @Builder
+    public static class CartItemResponse {
+        private Long productId;
+        private String productName;
+        private BigDecimal productPrice;
+        private Integer quantity;
+        private BigDecimal totalPrice;
+    }
 }
