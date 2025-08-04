@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -48,9 +49,10 @@ public class CartService {
             newItem.setProduct(product);
             newItem.setQuantity(cartItemRequest.getQuantity());
             cartItemRepository.save(newItem);
+            cart.getCartItems().add(newItem);
         }
 
-        return mapToCartResponse(cart);
+        return mapToCartResponse(cartRepository.save(cart));
     }
 
     @Transactional
@@ -64,7 +66,7 @@ public class CartService {
         cartItem.setQuantity(quantity);
         cartItemRepository.save(cartItem);
 
-        return mapToCartResponse(cart);
+        return mapToCartResponse(cartRepository.save(cart));
     }
 
     @Transactional
@@ -75,13 +77,16 @@ public class CartService {
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("CartItem", "productId", productId));
 
+        cart.getCartItems().remove(cartItem);
         cartItemRepository.delete(cartItem);
-        return mapToCartResponse(cart);
+
+        return mapToCartResponse(cartRepository.save(cart));
     }
 
     @Transactional
     public void clearCart(Long userId) {
         Cart cart = getOrCreateCart(userId);
+        cart.getCartItems().clear();
         cartItemRepository.deleteAllByCart(cart);
     }
 
@@ -101,12 +106,26 @@ public class CartService {
                 .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        List<CartResponse.CartItemResponse> itemResponses = cart.getCartItems().stream()
+                .map(this::mapToCartItemResponse)
+                .toList();
+
         return CartResponse.builder()
                 .id(cart.getId())
                 .userId(cart.getUser().getId())
-                .items(cart.getCartItems())
+                .items(itemResponses)
                 .totalItems(cart.getCartItems().size())
                 .totalPrice(totalPrice)
+                .build();
+    }
+
+    private CartResponse.CartItemResponse mapToCartItemResponse(CartItem cartItem) {
+        return CartResponse.CartItemResponse.builder()
+                .productId(cartItem.getProduct().getId())
+                .productName(cartItem.getProduct().getName())
+                .productPrice(cartItem.getProduct().getPrice())
+                .quantity(cartItem.getQuantity())
+                .totalPrice(cartItem.getProduct().getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())))
                 .build();
     }
 }
