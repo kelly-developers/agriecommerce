@@ -87,7 +87,7 @@ public class CartService {
     public void clearCart(Long userId) {
         Cart cart = getOrCreateCart(userId);
         cart.getCartItems().clear();
-        cartItemRepository.deleteAllByCart(cart);
+        cartItemRepository.deleteByCart(cart);  // Changed to use deleteByCart
     }
 
     private Cart getOrCreateCart(Long userId) {

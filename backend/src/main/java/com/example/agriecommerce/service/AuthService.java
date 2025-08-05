@@ -1,5 +1,6 @@
 package com.example.agriecommerce.service;
 
+import com.example.agriecommerce.config.JwtConfig;
 import com.example.agriecommerce.dto.request.LoginRequest;
 import com.example.agriecommerce.dto.request.RefreshTokenRequest;
 import com.example.agriecommerce.dto.request.RegisterRequest;
@@ -31,6 +32,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final JwtConfig jwtConfig;
 
     /**
      * Authenticate user with email and password, and return access + refresh token.

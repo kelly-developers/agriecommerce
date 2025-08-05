@@ -23,11 +23,11 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(UserDetails userDetails) {
-        return buildToken(new HashMap<>(), userDetails, jwtConfig.getExpirationMs());
+        return buildToken(new HashMap<>(), userDetails, jwtConfig.getJwtExpirationMs());
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(new HashMap<>(), userDetails, jwtConfig.getRefreshExpirationMs());
+        return buildToken(new HashMap<>(), userDetails, jwtConfig.getJwtRefreshExpirationMs());
     }
 
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
@@ -63,7 +63,7 @@ public class JwtTokenProvider {
     }
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtConfig.getSecret());
+        byte[] keyBytes = Decoders.BASE64.decode(jwtConfig.getJwtSecret());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -71,7 +71,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtConfig.getExpirationMs()))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtConfig.getJwtExpirationMs()))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
