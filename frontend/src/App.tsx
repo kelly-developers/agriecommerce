@@ -13,6 +13,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -34,6 +35,11 @@ const App = () => (
               <Route path="/order-confirmation" element={<OrderConfirmation />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
               <Route path="/admin" element={
                 <ProtectedRoute requireAdmin>
                   <Admin />

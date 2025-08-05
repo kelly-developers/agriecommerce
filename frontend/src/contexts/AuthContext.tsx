@@ -7,7 +7,8 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'USER' | 'ADMIN';
+  phone?: string;
+  role: 'USER' | 'FARMER' | 'ADMIN';
 }
 
 interface AuthContextType {
@@ -74,13 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       const response = await authAPI.register(userData);
       
-      localStorage.setItem('authToken', response.token);
-      localStorage.setItem('userData', JSON.stringify(response.user));
-      setUser(response.user);
-      
+      // Don't auto-login after registration, redirect to login instead
       toast({
         title: "Registration Successful",
-        description: "Your account has been created successfully!",
+        description: "Your account has been created! Please sign in to continue.",
       });
       
       return true;

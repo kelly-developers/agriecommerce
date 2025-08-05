@@ -8,6 +8,7 @@ POST /auth/register - User registration
 POST /auth/login - User login
 POST /auth/refresh - Refresh JWT token
 POST /auth/logout - User logout
+POST /admin/users - Create new user (Admin only)
 ```
 
 ## 📦 Product Management Endpoints
@@ -44,6 +45,7 @@ GET /users/profile - Get user profile
 PUT /users/profile - Update user profile
 GET /admin/users - Get all users (Admin only)
 PUT /admin/users/{id}/status - Update user status (Admin only)
+PUT /admin/users/{id}/role - Update user role (Admin only)
 ```
 
 ## 📍 Address Management Endpoints

@@ -40,6 +40,11 @@ export const authAPI = {
     const response = await api.post('/auth/refresh');
     return response.data;
   },
+
+  adminCreateUser: async (userData: any) => {
+    const response = await api.post('/admin/users', userData);
+    return response.data;
+  },
 };
 
 // Products API
@@ -161,6 +166,11 @@ export const usersAPI = {
   
   updateUserStatus: async (id: string, status: string) => {
     const response = await api.put(`/admin/users/${id}/status`, { status });
+    return response.data;
+  },
+
+  updateUserRole: async (id: string, role: string) => {
+    const response = await api.put(`/admin/users/${id}/role`, { role });
     return response.data;
   },
 };

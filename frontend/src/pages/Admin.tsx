@@ -7,6 +7,7 @@ import { Plus, Package, Users, ShoppingCart } from 'lucide-react';
 import { ProductManagement } from '@/components/admin/ProductManagement';
 import { OrderManagement } from '@/components/admin/OrderManagement';
 import { UserManagement } from '@/components/admin/UserManagement';
+import { RoleManagement } from '@/components/admin/RoleManagement';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -26,7 +27,7 @@ const Admin = () => {
         <AdminStats />
 
         <Tabs defaultValue="products" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
               Products
@@ -38,6 +39,10 @@ const Admin = () => {
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="roles" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Roles
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -55,6 +60,10 @@ const Admin = () => {
 
           <TabsContent value="users" className="space-y-4">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="roles" className="space-y-4">
+            <RoleManagement />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
