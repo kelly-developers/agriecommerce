@@ -25,12 +25,16 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class AuthService {
+
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenService refreshTokenService;
 
+    /**
+     * Authenticate user with email and password, and return access + refresh token.
+     */
     public AuthResponse authenticateUser(LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -55,6 +59,9 @@ public class AuthService {
         }
     }
 
+    /**
+     * Register a new user and return the generated tokens.
+     */
     public AuthResponse registerUser(RegisterRequest registerRequest) {
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             throw new BadRequestException("Email address already in use");
@@ -70,14 +77,17 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
-
         UserPrincipal userPrincipal = UserPrincipal.create(savedUser);
+
         String accessToken = tokenProvider.generateToken(userPrincipal);
         String refreshToken = refreshTokenService.createRefreshToken(savedUser.getId()).getToken();
 
         return AuthResponse.of(savedUser, accessToken, refreshToken);
     }
 
+    /**
+     * Refresh access token using a valid refresh token.
+     */
     public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenRequest.getRefreshToken())
                 .orElseThrow(() -> new TokenRefreshException(
@@ -87,11 +97,8 @@ public class AuthService {
 
         refreshTokenService.verifyExpiration(refreshToken);
 
-        // Get user details from the refresh token
         User user = refreshToken.getUser();
         UserPrincipal userPrincipal = UserPrincipal.create(user);
-
-        // Generate new access token
         String accessToken = tokenProvider.generateToken(userPrincipal);
 
         return AuthResponse.of(user, accessToken, refreshToken.getToken());

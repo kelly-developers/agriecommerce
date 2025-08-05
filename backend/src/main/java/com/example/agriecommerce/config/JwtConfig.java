@@ -6,9 +6,21 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "jwt")
+@ConfigurationProperties(prefix = "app")
 public class JwtConfig {
-    private String secret;
-    private long expirationMs;
-    private long refreshExpirationMs;
+    private String jwtSecret;
+    private long jwtExpirationMs;
+    private long jwtRefreshExpirationMs;
+
+    public String getSecret() {
+        return jwtSecret;
+    }
+
+    public long getExpirationMs() {
+        return jwtExpirationMs;
+    }
+
+    public long getRefreshExpirationMs() {
+        return jwtRefreshExpirationMs;
+    }
 }
