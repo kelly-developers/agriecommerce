@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Product, CartItem, CustomerInfo, DeliveryInfo } from '@/types/product';
 
-const API_BASE_URL = 'https://agriecommerce.onrender.com/api/v1';   
+const API_BASE_URL = 'https://agriecommerce.onrender.com/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
