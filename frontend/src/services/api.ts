@@ -216,4 +216,82 @@ export const mpesaAPI = {
   },
 };
 
+// Farmers API
+export const farmersAPI = {
+  submitProduct: async (productData: any) => {
+    const response = await api.post('/farmer/products', productData);
+    return response.data;
+  },
+  
+  getMyProducts: async () => {
+    const response = await api.get('/farmer/products');
+    return response.data;
+  },
+  
+  updateProduct: async (id: string, productData: any) => {
+    const response = await api.put(`/farmer/products/${id}`, productData);
+    return response.data;
+  },
+  
+  deleteProduct: async (id: string) => {
+    const response = await api.delete(`/farmer/products/${id}`);
+    return response.data;
+  }
+};
+
+// Admin API Extensions
+export const adminAPI = {
+  // Existing admin endpoints
+  getAllUsers: async () => {
+    const response = await api.get('/admin/users');
+    return response.data;
+  },
+  
+  updateUserStatus: async (userId: string, status: string) => {
+    const response = await api.put(`/admin/users/${userId}/status`, { status });
+    return response.data;
+  },
+  
+  updateUserRole: async (userId: string, role: string) => {
+    const response = await api.put(`/admin/users/${userId}/role`, { role });
+    return response.data;
+  },
+  
+  createUser: async (userData: any) => {
+    const response = await api.post('/admin/users', userData);
+    return response.data;
+  },
+  
+  getAllOrders: async () => {
+    const response = await api.get('/admin/orders');
+    return response.data;
+  },
+  
+  updateOrderStatus: async (orderId: string, status: string) => {
+    const response = await api.put(`/admin/orders/${orderId}/status`, { status });
+    return response.data;
+  },
+
+  // Product approval endpoints
+  getPendingProducts: async () => {
+    const response = await api.get('/admin/products/pending');
+    return response.data;
+  },
+  
+  approveProduct: async (productId: string) => {
+    const response = await api.put(`/admin/products/${productId}/approve`);
+    return response.data;
+  },
+  
+  rejectProduct: async (productId: string, data: { reason: string }) => {
+    const response = await api.put(`/admin/products/${productId}/reject`, data);
+    return response.data;
+  },
+  
+  getProductSubmissions: async () => {
+    const response = await api.get('/admin/products/submissions');
+    return response.data;
+  }
+};
+
 export default api;

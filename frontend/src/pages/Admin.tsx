@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Layout } from '@/components/Layout';
+import { AdminLayout } from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, Users, ShoppingCart } from 'lucide-react';
+import { Plus, Package, Users, ShoppingCart, Settings } from 'lucide-react';
 import { ProductManagement } from '@/components/admin/ProductManagement';
+import { PendingProducts } from '@/components/admin/PendingProducts';
 import { OrderManagement } from '@/components/admin/OrderManagement';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { RoleManagement } from '@/components/admin/RoleManagement';
@@ -15,7 +16,7 @@ const Admin = () => {
   const { user } = useAuth();
 
   return (
-    <Layout>
+    <AdminLayout>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -27,10 +28,14 @@ const Admin = () => {
         <AdminStats />
 
         <Tabs defaultValue="products" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
               Products
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Pending
             </TabsTrigger>
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4" />
@@ -41,7 +46,7 @@ const Admin = () => {
               Users
             </TabsTrigger>
             <TabsTrigger value="roles" className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
+              <Settings className="w-4 h-4" />
               Roles
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
@@ -52,6 +57,10 @@ const Admin = () => {
 
           <TabsContent value="products" className="space-y-4">
             <ProductManagement />
+          </TabsContent>
+
+          <TabsContent value="pending" className="space-y-4">
+            <PendingProducts />
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-4">
@@ -78,7 +87,7 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </AdminLayout>
   );
 };
 

@@ -145,5 +145,3 @@ export function AppSidebar({ onCategorySelect, selectedCategory }: AppSidebarPro
     </Sidebar>
   );
 }
-
-//to review

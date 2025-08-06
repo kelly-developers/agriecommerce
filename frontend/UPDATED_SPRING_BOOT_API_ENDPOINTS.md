@@ -349,6 +349,22 @@ Authorization: Bearer <jwt-token>
 Content-Type: multipart/form-data
 ```
 
+## 🌾 NEW: Farmer Product Submission Endpoints
+```
+POST /farmer/products - Submit product for approval (Farmer only)
+GET /farmer/products - Get farmer's own submissions (Farmer only)  
+PUT /farmer/products/{id} - Update pending product (Farmer only)
+DELETE /farmer/products/{id} - Delete pending product (Farmer only)
+```
+
+## 🔍 NEW: Admin Product Approval Endpoints  
+```
+GET /admin/products/pending - Get pending products (Admin only)
+PUT /admin/products/{id}/approve - Approve product (Admin only)
+PUT /admin/products/{id}/reject - Reject with reason (Admin only)
+GET /admin/products/submissions - Get all submissions (Admin only)
+```
+
 ## 📝 Order Status Values
 - `PENDING` - Order placed, awaiting payment confirmation
 - `CONFIRMED` - Payment confirmed, order being prepared  

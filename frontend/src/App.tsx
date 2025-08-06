@@ -11,11 +11,13 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Admin from "./pages/Admin";
+import FarmerDashboard from "./pages/FarmerDashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -40,10 +42,15 @@ const App = () => (
                   <Profile />
                 </ProtectedRoute>
               } />
-              <Route path="/admin" element={
-                <ProtectedRoute requireAdmin>
-                  <Admin />
+              <Route path="/farmer" element={
+                <ProtectedRoute>
+                  <FarmerDashboard />
                 </ProtectedRoute>
+              } />
+              <Route path="/admin/*" element={
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

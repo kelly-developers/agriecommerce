@@ -48,6 +48,22 @@ PUT /admin/users/{id}/status - Update user status (Admin only)
 PUT /admin/users/{id}/role - Update user role (Admin only)
 ```
 
+## 🌾 Farmer Product Submission Endpoints
+```
+POST /farmer/products - Submit product for approval (Farmer only)
+GET /farmer/products - Get farmer's own products (Farmer only)
+PUT /farmer/products/{id} - Update pending product (Farmer only)
+DELETE /farmer/products/{id} - Delete pending product (Farmer only)
+```
+
+## 🔍 Admin Product Approval Endpoints
+```
+GET /admin/products/pending - Get all pending products (Admin only)
+GET /admin/products/submissions - Get all product submissions (Admin only)
+PUT /admin/products/{id}/approve - Approve product submission (Admin only)
+PUT /admin/products/{id}/reject - Reject product submission with reason (Admin only)
+```
+
 ## 📍 Address Management Endpoints
 ```
 GET /addresses - Get user addresses

@@ -2,7 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useCartContext } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { ShoppingCart, User, LogOut, Settings } from "lucide-react";
+import { ShoppingCart, User, LogOut, Settings, Leaf } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -60,6 +60,14 @@ export function Layout({ children, onCategorySelect, selectedCategory }: LayoutP
                         Profile
                       </Link>
                     </DropdownMenuItem>
+                    {user.role === 'FARMER' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/farmer" className="flex items-center gap-2">
+                          <Leaf className="w-4 h-4" />
+                          Farmer Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {isAdmin && (
                       <DropdownMenuItem asChild>
                         <Link to="/admin" className="flex items-center gap-2">
