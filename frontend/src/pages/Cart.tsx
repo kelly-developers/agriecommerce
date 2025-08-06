@@ -46,11 +46,13 @@ const Cart = () => {
                   <div className="flex gap-4">
                     {/* Product Image */}
                     <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={item.product.image}
-                        alt={item.product.name}
-                        className="w-full h-full object-cover"
-                      />
+                      {item.product.imageUrl && (
+                        <img
+                          src={item.product.imageUrl}
+                          alt={item.product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                     </div>
 
                     {/* Product Details */}
@@ -91,7 +93,7 @@ const Cart = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                            disabled={item.quantity >= item.product.stock}
+                            disabled={item.quantity >= (item.product.stock || Infinity)}
                           >
                             <Plus className="w-3 h-3" />
                           </Button>

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { CartItem, Product } from '@/types/product';
-import { cartAPI } from '@/services/api';
+import { cartAPI, productsAPI } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useCart = () => {
@@ -9,6 +9,25 @@ export const useCart = () => {
 
   // Load cart from API when user is logged in
   useEffect(() => {
+    const loadCart = async () => {
+      try {
+        const cartData = await cartAPI.get();
+        // Fetch full product details for each item
+        const itemsWithProducts = await Promise.all(
+          cartData.items.map(async (item: any) => {
+            const product = await productsAPI.getById(item.productId);
+            return {
+              product,
+              quantity: item.quantity
+            };
+          })
+        );
+        setItems(itemsWithProducts);
+      } catch (error) {
+        console.error('Failed to load cart:', error);
+      }
+    };
+
     if (user) {
       loadCart();
     } else {
@@ -27,23 +46,11 @@ export const useCart = () => {
     }
   }, [items, user]);
 
-  const loadCart = async () => {
-    try {
-      const cartData = await cartAPI.get();
-      setItems(cartData.items || []);
-    } catch (error) {
-      console.error('Failed to load cart:', error);
-    }
-  };
-
   const addToCart = useCallback(async (product: Product, quantity: number = 1) => {
     if (user) {
       try {
         await cartAPI.addItem(product.id, quantity);
-        await loadCart();
-      } catch (error) {
-        console.error('Failed to add to cart:', error);
-        // Fallback to local state
+        // Update local state with the new product
         setItems(currentItems => {
           const existingItem = currentItems.find(item => item.product.id === product.id);
           if (existingItem) {
@@ -55,6 +62,8 @@ export const useCart = () => {
           }
           return [...currentItems, { product, quantity }];
         });
+      } catch (error) {
+        console.error('Failed to add to cart:', error);
       }
     } else {
       // Guest user - use local state
@@ -76,10 +85,9 @@ export const useCart = () => {
     if (user) {
       try {
         await cartAPI.removeItem(productId);
-        await loadCart();
+        setItems(currentItems => currentItems.filter(item => item.product.id !== productId));
       } catch (error) {
         console.error('Failed to remove from cart:', error);
-        setItems(currentItems => currentItems.filter(item => item.product.id !== productId));
       }
     } else {
       setItems(currentItems => currentItems.filter(item => item.product.id !== productId));
@@ -95,14 +103,13 @@ export const useCart = () => {
     if (user) {
       try {
         await cartAPI.updateItem(productId, quantity);
-        await loadCart();
-      } catch (error) {
-        console.error('Failed to update cart:', error);
         setItems(currentItems =>
           currentItems.map(item =>
             item.product.id === productId ? { ...item, quantity } : item
           )
         );
+      } catch (error) {
+        console.error('Failed to update cart:', error);
       }
     } else {
       setItems(currentItems =>
@@ -120,7 +127,6 @@ export const useCart = () => {
         setItems([]);
       } catch (error) {
         console.error('Failed to clear cart:', error);
-        setItems([]);
       }
     } else {
       setItems([]);

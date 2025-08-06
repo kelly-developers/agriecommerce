@@ -47,7 +47,7 @@ export const authAPI = {
   },
 };
 
-// Products API - Updated to match backend endpoints
+// Products API - Updated with image upload
 export const productsAPI = {
   getAll: async (params?: { category?: string; page?: number; size?: number }) => {
     const response = await api.get('/products', { params });
@@ -59,7 +59,7 @@ export const productsAPI = {
     return response.data;
   },
   
-  create: async (productData: ProductRequest) => { // Changed from FormData to ProductRequest
+  create: async (productData: ProductRequest) => {
     const response = await api.post('/products', productData);
     return response.data;
   },
@@ -77,9 +77,19 @@ export const productsAPI = {
   getByCategory: async (category: string) => {
     const response = await api.get(`/products/category/${category}`);
     return response.data;
+  },
+
+  uploadImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await api.post('/products/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
   }
 };
-
 // Categories API
 export const categoriesAPI = {
   getAll: async () => {
@@ -281,8 +291,6 @@ export const adminAPI = {
   }
 };
 
-export default api;
-
 // Type definitions
 interface ProductRequest {
   name: string;
@@ -293,4 +301,9 @@ interface ProductRequest {
   stock: number;
   imageUrl?: string;
   isOrganic?: boolean;
+  subcategory?: string;
+  origin?: string;
+  nutritionalInfo?: string;
 }
+
+export default api;

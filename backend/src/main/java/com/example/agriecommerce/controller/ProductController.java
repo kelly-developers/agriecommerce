@@ -2,20 +2,35 @@ package com.example.agriecommerce.controller;
 
 import com.example.agriecommerce.dto.request.ProductRequest;
 import com.example.agriecommerce.dto.response.ProductResponse;
+import com.example.agriecommerce.service.ImageStorageService;
 import com.example.agriecommerce.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
 public class ProductController {
     private final ProductService productService;
+    private final ImageStorageService imageStorageService;
+
+    @PostMapping("/upload")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> uploadImage(@RequestParam("image") MultipartFile file) {
+        try {
+            String imageUrl = imageStorageService.store(file);
+            return ResponseEntity.ok().body(new ImageUploadResponse(imageUrl));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Image upload failed: " + e.getMessage());
+        }
+    }
 
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
@@ -51,5 +66,17 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+    // Helper class for image upload response
+    private static class ImageUploadResponse {
+        private final String imageUrl;
+
+        public ImageUploadResponse(String imageUrl) {
+            this.imageUrl = imageUrl;
+        }
+
+        public String getImageUrl() {
+            return imageUrl;
+        }
     }
 }
