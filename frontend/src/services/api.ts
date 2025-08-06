@@ -47,7 +47,7 @@ export const authAPI = {
   },
 };
 
-// Products API
+// Products API - Updated to match backend endpoints
 export const productsAPI = {
   getAll: async (params?: { category?: string; page?: number; size?: number }) => {
     const response = await api.get('/products', { params });
@@ -59,24 +59,25 @@ export const productsAPI = {
     return response.data;
   },
   
-  create: async (productData: FormData) => {
-    const response = await api.post('/admin/products', productData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+  create: async (productData: ProductRequest) => { // Changed from FormData to ProductRequest
+    const response = await api.post('/products', productData);
     return response.data;
   },
   
-  update: async (id: string, productData: FormData) => {
-    const response = await api.put(`/admin/products/${id}`, productData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+  update: async (id: string, productData: ProductRequest) => {
+    const response = await api.put(`/products/${id}`, productData);
     return response.data;
   },
   
   delete: async (id: string) => {
-    const response = await api.delete(`/admin/products/${id}`);
+    const response = await api.delete(`/products/${id}`);
     return response.data;
   },
+
+  getByCategory: async (category: string) => {
+    const response = await api.get(`/products/category/${category}`);
+    return response.data;
+  }
 };
 
 // Categories API
@@ -239,9 +240,9 @@ export const farmersAPI = {
   }
 };
 
-// Admin API Extensions
+// Admin API
 export const adminAPI = {
-  // Existing admin endpoints
+  // User management
   getAllUsers: async () => {
     const response = await api.get('/admin/users');
     return response.data;
@@ -261,7 +262,8 @@ export const adminAPI = {
     const response = await api.post('/admin/users', userData);
     return response.data;
   },
-  
+
+  // Order management
   getAllOrders: async () => {
     const response = await api.get('/admin/orders');
     return response.data;
@@ -272,26 +274,23 @@ export const adminAPI = {
     return response.data;
   },
 
-  // Product approval endpoints
-  getPendingProducts: async () => {
-    const response = await api.get('/admin/products/pending');
-    return response.data;
-  },
-  
-  approveProduct: async (productId: string) => {
-    const response = await api.put(`/admin/products/${productId}/approve`);
-    return response.data;
-  },
-  
-  rejectProduct: async (productId: string, data: { reason: string }) => {
-    const response = await api.put(`/admin/products/${productId}/reject`, data);
-    return response.data;
-  },
-  
-  getProductSubmissions: async () => {
-    const response = await api.get('/admin/products/submissions');
+  // Analytics
+  getDashboardStats: async () => {
+    const response = await api.get('/admin/analytics/stats');
     return response.data;
   }
 };
 
 export default api;
+
+// Type definitions
+interface ProductRequest {
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  unitType: string;
+  stock: number;
+  imageUrl?: string;
+  isOrganic?: boolean;
+}
