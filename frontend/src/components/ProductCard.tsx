@@ -16,13 +16,13 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
       <Link to={`/product/${product.id}`}>
         <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted/30 to-muted/10">
           <img
-            src={product.image}
+            src={product.imageUrl || '/placeholder.jpg'} // fallback image if null
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
           />
         </div>
       </Link>
-      
+
       <CardContent className="p-2">
         <div className="mb-2">
           <Link to={`/product/${product.id}`}>
@@ -31,11 +31,17 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             </h3>
           </Link>
           <div className="flex items-center gap-1 flex-wrap">
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 hidden sm:inline-flex">
+            <Badge
+              variant="secondary"
+              className="text-[10px] px-1.5 py-0.5 hidden sm:inline-flex"
+            >
               {product.category}
             </Badge>
             {product.isOrganic && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700">
+              <Badge
+                variant="secondary"
+                className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700"
+              >
                 <Leaf className="w-2.5 h-2.5 mr-0.5" />
                 <span className="hidden sm:inline">Organic</span>
                 <span className="sm:hidden">Org</span>
@@ -43,7 +49,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             )}
           </div>
         </div>
-        
+
         <div className="space-y-1.5">
           <div className="text-center">
             <span className="text-sm font-bold text-primary block">
@@ -53,7 +59,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
               /{product.unitType || 'kg'}
             </span>
           </div>
-          
+
           <Button
             onClick={() => onAddToCart(product)}
             size="sm"

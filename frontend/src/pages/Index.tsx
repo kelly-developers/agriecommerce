@@ -33,7 +33,7 @@ const Index = () => {
         productsAPI.getAll(),
         categoriesAPI.getAll()
       ]);
-      
+
       setProducts(productsData.products || productsData);
       setCategories(categoriesData || []);
     } catch (error) {
@@ -46,7 +46,7 @@ const Index = () => {
 
   const loadProducts = async () => {
     if (selectedCategory === 'all') return;
-    
+
     try {
       setLoading(true);
       const params = { category: selectedCategory };
@@ -60,9 +60,10 @@ const Index = () => {
     }
   };
 
-  const filteredProducts = selectedCategory === 'all' 
-    ? products 
-    : products.filter(product => product.category === selectedCategory);
+  const filteredProducts =
+    selectedCategory === 'all'
+      ? products
+      : products.filter((product) => product.category === selectedCategory);
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -71,13 +72,16 @@ const Index = () => {
   const handleAddToCart = (product: any) => {
     addToCart(product);
     toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`,
+      title: 'Added to cart',
+      description: `${product.name} has been added to your cart.`
     });
   };
 
   return (
-    <Layout onCategorySelect={handleCategorySelect} selectedCategory={selectedCategory}>
+    <Layout
+      onCategorySelect={handleCategorySelect}
+      selectedCategory={selectedCategory}
+    >
       <div className="space-y-8">
         {/* Hero Section */}
         <section className="relative h-96 overflow-hidden rounded-lg mx-6 mt-6">
@@ -93,7 +97,8 @@ const Index = () => {
                   Fresh African Agricultural Products
                 </h1>
                 <p className="text-xl mb-6 opacity-90">
-                  Supporting local farmers and sustainable agriculture across Africa
+                  Supporting local farmers and sustainable agriculture across
+                  Africa
                 </p>
                 <div className="flex items-center gap-6 text-sm">
                   <div className="flex items-center gap-2">
@@ -131,7 +136,9 @@ const Index = () => {
             {categories.map((category) => (
               <Button
                 key={category.id}
-                variant={selectedCategory === category.id ? 'default' : 'outline'}
+                variant={
+                  selectedCategory === category.id ? 'default' : 'outline'
+                }
                 onClick={() => setSelectedCategory(category.id)}
                 className="bg-primary hover:bg-primary-hover"
               >
@@ -145,20 +152,25 @@ const Index = () => {
         <section className="px-6">
           <div className="mb-6">
             <h2 className="text-3xl font-bold text-foreground mb-2">
-              {selectedCategory === 'all' 
-                ? 'All Products' 
-                : categories.find(c => c.id === selectedCategory)?.name || 'Products'
-              }
+              {selectedCategory === 'all'
+                ? 'All Products'
+                : categories.find((c) => c.id === selectedCategory)?.name ||
+                  'Products'}
             </h2>
             <p className="text-muted-foreground">
-              {selectedCategory === 'vegetables' && 'Fresh traditional African vegetables rich in nutrients'}
-              {selectedCategory === 'fruits' && 'Sweet tropical fruits from local farms'}
-              {selectedCategory === 'seeds' && 'High-quality seeds for sustainable farming'}
-              {selectedCategory === 'tools' && 'Essential tools for modern farming'}
-              {selectedCategory === 'all' && 'Discover our complete range of agricultural products'}
+              {selectedCategory === 'vegetables' &&
+                'Fresh traditional African vegetables rich in nutrients'}
+              {selectedCategory === 'fruits' &&
+                'Sweet tropical fruits from local farms'}
+              {selectedCategory === 'seeds' &&
+                'High-quality seeds for sustainable farming'}
+              {selectedCategory === 'tools' &&
+                'Essential tools for modern farming'}
+              {selectedCategory === 'all' &&
+                'Discover our complete range of agricultural products'}
             </p>
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center items-center py-16">
               <Loader2 className="w-8 h-8 animate-spin" />
@@ -197,22 +209,25 @@ const Index = () => {
               Artificial Intelligence Alliance Agriculture NGO
             </h2>
             <p className="text-lg mb-6 opacity-90">
-              We are committed to promoting sustainable agriculture and supporting local farming communities 
-              across Africa through innovative technology and traditional knowledge.
+              We are committed to promoting sustainable agriculture and
+              supporting local farming communities across Africa through
+              innovative technology and traditional knowledge.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
               <div className="text-center">
                 <Leaf className="w-12 h-12 mx-auto mb-3 opacity-80" />
                 <h3 className="font-semibold mb-2">Organic & Natural</h3>
                 <p className="text-sm opacity-80">
-                  All our products are grown using sustainable, organic farming methods
+                  All our products are grown using sustainable, organic farming
+                  methods
                 </p>
               </div>
               <div className="text-center">
                 <Users className="w-12 h-12 mx-auto mb-3 opacity-80" />
                 <h3 className="font-semibold mb-2">Community Support</h3>
                 <p className="text-sm opacity-80">
-                  Direct partnerships with local farmers and farming cooperatives
+                  Direct partnerships with local farmers and farming
+                  cooperatives
                 </p>
               </div>
               <div className="text-center">
