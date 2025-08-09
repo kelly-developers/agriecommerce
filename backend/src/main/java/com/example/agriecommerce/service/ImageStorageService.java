@@ -7,47 +7,120 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 @Service
 public class ImageStorageService {
+    private static final Logger logger = Logger.getLogger(ImageStorageService.class.getName());
 
     @Value("${upload.directory}")
     private String uploadDirectory;
 
+    // Allowed file extensions
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
+
+    // Maximum file size (5MB)
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
+
     public String store(MultipartFile file) throws IOException {
         // Validate file
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("File is empty");
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty or null");
+        }
+
+        // Validate file size
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("File size exceeds maximum limit of 5MB");
         }
 
         // Validate file type
         String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
-        if (!Set.of(".jpg", ".jpeg", ".png", ".gif").contains(extension)) {
-            throw new IllegalArgumentException("Only JPG, JPEG, PNG, GIF images are allowed");
+        if (originalFilename == null || originalFilename.lastIndexOf(".") == -1) {
+            throw new IllegalArgumentException("File has no extension");
         }
 
-        // Create directory (with retry logic for Render)
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException("Only JPG, JPEG, PNG, GIF, WEBP images are allowed");
+        }
+
+        // Create directory with proper permissions
         Path uploadPath = Paths.get(uploadDirectory);
         try {
-            Files.createDirectories(uploadPath);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+                logger.info("Created upload directory: " + uploadPath);
+
+                // Set directory permissions (readable/executable by all)
+                try {
+                    uploadPath.toFile().setReadable(true, false);
+                    uploadPath.toFile().setExecutable(true, false);
+                } catch (SecurityException e) {
+                    logger.warning("Could not set directory permissions: " + e.getMessage());
+                }
+            }
         } catch (FileAlreadyExistsException e) {
             // Directory already exists, ignore
+        } catch (IOException e) {
+            logger.severe("Failed to create upload directory: " + e.getMessage());
+            throw new IOException("Failed to create upload directory", e);
         }
 
-        // Generate filename
+        // Generate unique filename
         String uniqueFilename = UUID.randomUUID() + extension;
         Path filePath = uploadPath.resolve(uniqueFilename);
 
-        // Save with atomic move
-        Path tempFile = Files.createTempFile("upload-", extension);
+        // Save with atomic move operation
+        Path tempFile = null;
         try {
+            // Create temp file in the same directory for atomic move
+            tempFile = Files.createTempFile(uploadPath, "upload-", extension);
+
+            // Write to temp file
             file.getInputStream().transferTo(Files.newOutputStream(tempFile));
+
+            // Atomic move to final location
             Files.move(tempFile, filePath, StandardCopyOption.ATOMIC_MOVE);
+
+            // Set file permissions (readable by all)
+            try {
+                filePath.toFile().setReadable(true, false);
+            } catch (SecurityException e) {
+                logger.warning("Could not set file permissions: " + e.getMessage());
+            }
+
+            logger.info("Successfully stored file: " + filePath);
+
+            // Return full URL
+            return "https://agriecommerce.onrender.com/uploads/" + uniqueFilename;
+        } catch (IOException e) {
+            logger.severe("Failed to store file: " + e.getMessage());
+            throw new IOException("Failed to store file", e);
         } finally {
-            Files.deleteIfExists(tempFile);
+            // Clean up temp file if it exists
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    logger.warning("Failed to delete temp file: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    // Optional: Add method to delete files
+    public void delete(String filename) throws IOException {
+        if (filename == null || filename.isEmpty()) {
+            throw new IllegalArgumentException("Filename cannot be empty");
         }
 
-        return "/uploads/" + uniqueFilename;
+        Path filePath = Paths.get(uploadDirectory, filename);
+        try {
+            Files.deleteIfExists(filePath);
+            logger.info("Deleted file: " + filePath);
+        } catch (IOException e) {
+            logger.severe("Failed to delete file: " + e.getMessage());
+            throw new IOException("Failed to delete file", e);
+        }
     }
 }
