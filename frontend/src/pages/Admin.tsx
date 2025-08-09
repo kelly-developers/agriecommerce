@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, Users, ShoppingCart, Settings } from 'lucide-react';
+import { Plus, Package, Users, ShoppingCart, Settings, BarChart } from 'lucide-react';
 import { ProductManagement } from '@/components/admin/ProductManagement';
 import { PendingProducts } from '@/components/admin/PendingProducts';
 import { OrderManagement } from '@/components/admin/OrderManagement';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { RoleManagement } from '@/components/admin/RoleManagement';
+import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Admin = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('products');
 
   return (
     <AdminLayout>
@@ -27,7 +27,7 @@ const Admin = () => {
 
         <AdminStats />
 
-        <Tabs defaultValue="products" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
@@ -50,7 +50,7 @@ const Admin = () => {
               Roles
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
+              <BarChart className="w-4 h-4" />
               Analytics
             </TabsTrigger>
           </TabsList>
@@ -76,14 +76,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Analytics & Reports</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Advanced analytics coming soon...</p>
-              </CardContent>
-            </Card>
+            <AnalyticsDashboard />
           </TabsContent>
         </Tabs>
       </div>

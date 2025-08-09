@@ -90,6 +90,7 @@ export const productsAPI = {
     return response.data;
   }
 };
+
 // Categories API
 export const categoriesAPI = {
   getAll: async () => {
@@ -250,7 +251,7 @@ export const farmersAPI = {
   }
 };
 
-// Admin API
+// Admin API - Merged into a single definition
 export const adminAPI = {
   // User management
   getAllUsers: async () => {
@@ -287,6 +288,34 @@ export const adminAPI = {
   // Analytics
   getDashboardStats: async () => {
     const response = await api.get('/admin/analytics/stats');
+    return response.data;
+  },
+  getRecentOrders: async () => {
+    const response = await api.get('/admin/analytics/recent-orders');
+    return response.data;
+  },
+  getPopularProducts: async () => {
+    const response = await api.get('/admin/analytics/popular-products');
+    return response.data;
+  },
+  getSalesTrend: async (period: string) => {
+    const response = await api.get(`/admin/analytics/sales-trend?period=${period}`);
+    return response.data;
+  },
+  getUserStats: async () => {
+    const response = await api.get('/admin/analytics/user-stats');
+    return response.data;
+  },
+  getProductStats: async () => {
+    const response = await api.get('/admin/analytics/product-stats');
+    return response.data;
+  },
+  getRevenueByCategory: async () => {
+    const response = await api.get('/admin/analytics/revenue-by-category');
+    return response.data;
+  },
+  getOrderStatusDistribution: async () => {
+    const response = await api.get('/admin/analytics/order-status-distribution');
     return response.data;
   }
 };
