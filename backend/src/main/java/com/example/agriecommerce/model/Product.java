@@ -35,7 +35,7 @@ public class Product {
     @Min(0)
     private Integer stock;
 
-    @Size(max = 500)
+
     private String imageUrl;
 
     private Boolean isOrganic = false;

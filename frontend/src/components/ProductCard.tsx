@@ -11,14 +11,28 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
+  const getImageUrl = (url: string | null) => {
+    if (!url) return '/placeholder.jpg';
+    
+    // If URL already contains the domain, use as is
+    if (url.includes('://')) return url;
+    
+    // Otherwise construct the full URL
+    const baseUrl = 'https://agriecommerce.onrender.com';
+    return `${baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
+  };
+
   return (
     <Card className="group hover:shadow-md transition-all duration-200 overflow-hidden border border-border/50 hover:border-primary/20 w-full max-w-[180px] sm:max-w-[200px]">
       <Link to={`/product/${product.id}`}>
         <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted/30 to-muted/10">
           <img
-            src={product.imageUrl || '/placeholder.jpg'} // fallback image if null
+            src={getImageUrl(product.imageUrl)}
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder.jpg';
+            }}
           />
         </div>
       </Link>

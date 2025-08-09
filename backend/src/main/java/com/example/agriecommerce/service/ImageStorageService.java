@@ -16,10 +16,7 @@ public class ImageStorageService {
     @Value("${upload.directory}")
     private String uploadDirectory;
 
-    // Allowed file extensions
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
-
-    // Maximum file size (5MB)
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
 
     public String store(MultipartFile file) throws IOException {
@@ -51,7 +48,6 @@ public class ImageStorageService {
                 Files.createDirectories(uploadPath);
                 logger.info("Created upload directory: " + uploadPath);
 
-                // Set directory permissions (readable/executable by all)
                 try {
                     uploadPath.toFile().setReadable(true, false);
                     uploadPath.toFile().setExecutable(true, false);
@@ -59,8 +55,6 @@ public class ImageStorageService {
                     logger.warning("Could not set directory permissions: " + e.getMessage());
                 }
             }
-        } catch (FileAlreadyExistsException e) {
-            // Directory already exists, ignore
         } catch (IOException e) {
             logger.severe("Failed to create upload directory: " + e.getMessage());
             throw new IOException("Failed to create upload directory", e);
@@ -70,19 +64,11 @@ public class ImageStorageService {
         String uniqueFilename = UUID.randomUUID() + extension;
         Path filePath = uploadPath.resolve(uniqueFilename);
 
-        // Save with atomic move operation
-        Path tempFile = null;
         try {
-            // Create temp file in the same directory for atomic move
-            tempFile = Files.createTempFile(uploadPath, "upload-", extension);
+            // Save file directly
+            file.transferTo(filePath.toFile());
 
-            // Write to temp file
-            file.getInputStream().transferTo(Files.newOutputStream(tempFile));
-
-            // Atomic move to final location
-            Files.move(tempFile, filePath, StandardCopyOption.ATOMIC_MOVE);
-
-            // Set file permissions (readable by all)
+            // Set file permissions
             try {
                 filePath.toFile().setReadable(true, false);
             } catch (SecurityException e) {
@@ -91,24 +77,14 @@ public class ImageStorageService {
 
             logger.info("Successfully stored file: " + filePath);
 
-            // Return full URL
-            return "https://agriecommerce.onrender.com/uploads/" + uniqueFilename;
+            // Return relative path
+            return "/uploads/" + uniqueFilename;
         } catch (IOException e) {
             logger.severe("Failed to store file: " + e.getMessage());
             throw new IOException("Failed to store file", e);
-        } finally {
-            // Clean up temp file if it exists
-            if (tempFile != null) {
-                try {
-                    Files.deleteIfExists(tempFile);
-                } catch (IOException e) {
-                    logger.warning("Failed to delete temp file: " + e.getMessage());
-                }
-            }
         }
     }
 
-    // Optional: Add method to delete files
     public void delete(String filename) throws IOException {
         if (filename == null || filename.isEmpty()) {
             throw new IllegalArgumentException("Filename cannot be empty");
