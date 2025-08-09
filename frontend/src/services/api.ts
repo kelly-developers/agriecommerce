@@ -19,6 +19,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Error interceptor
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized errors (e.g., redirect to login)
+      console.error('Unauthorized access - please login again');
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth API
 export const authAPI = {
   login: async (email: string, password: string) => {
@@ -47,7 +59,7 @@ export const authAPI = {
   },
 };
 
-// Products API - Updated with image upload
+// Products API
 export const productsAPI = {
   getAll: async (params?: { category?: string; page?: number; size?: number }) => {
     const response = await api.get('/products', { params });
@@ -149,12 +161,12 @@ export const ordersAPI = {
   },
   
   updateStatus: async (id: string, status: string) => {
-    const response = await api.put(`/admin/orders/${id}/status`, { status });
+    const response = await api.put(`/orders/admin/${id}/status`, { status });
     return response.data;
   },
   
   getAllAdmin: async (params?: { page?: number; size?: number }) => {
-    const response = await api.get('/admin/orders', { params });
+    const response = await api.get('/orders/admin', { params });
     return response.data;
   },
 };
@@ -251,7 +263,7 @@ export const farmersAPI = {
   }
 };
 
-// Admin API - Merged into a single definition
+// Admin API
 export const adminAPI = {
   // User management
   getAllUsers: async () => {
@@ -276,12 +288,12 @@ export const adminAPI = {
 
   // Order management
   getAllOrders: async () => {
-    const response = await api.get('/admin/orders');
+    const response = await api.get('/orders/admin');
     return response.data;
   },
   
   updateOrderStatus: async (orderId: string, status: string) => {
-    const response = await api.put(`/admin/orders/${orderId}/status`, { status });
+    const response = await api.put(`/orders/admin/${orderId}/status`, { status });
     return response.data;
   },
 
