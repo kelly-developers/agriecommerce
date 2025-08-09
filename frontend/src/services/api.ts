@@ -287,7 +287,7 @@ export const adminAPI = {
 
   // Analytics
   getDashboardStats: async () => {
-    const response = await api.get('/admin/analytics/stats');
+    const response = await api.get('/admin/analytics/dashboard-stats');
     return response.data;
   },
   getRecentOrders: async () => {
