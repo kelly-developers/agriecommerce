@@ -7,6 +7,7 @@ import com.example.agriecommerce.model.Product;
 import com.example.agriecommerce.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,12 +16,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductService {
     private final ProductRepository productRepository;
+    private final CategoryService categoryService;
 
     public ProductResponse createProduct(ProductRequest productRequest) {
         Product product = new Product();
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
-        product.setPrice(productRequest.getPrice()); // Directly use BigDecimal
+        product.setPrice(productRequest.getPrice());
         product.setCategory(productRequest.getCategory());
         product.setUnitType(productRequest.getUnitType());
         product.setStock(productRequest.getStock());
@@ -49,7 +51,7 @@ public class ProductService {
 
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
-        product.setPrice(productRequest.getPrice()); // Directly use BigDecimal
+        product.setPrice(productRequest.getPrice());
         product.setCategory(productRequest.getCategory());
         product.setUnitType(productRequest.getUnitType());
         product.setStock(productRequest.getStock());
@@ -73,6 +75,14 @@ public class ProductService {
     }
 
     private ProductResponse mapToProductResponse(Product product) {
+        // Build the full URL for the image
+        String fullImageUrl = null;
+        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+            fullImageUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path(product.getImageUrl().startsWith("/") ? product.getImageUrl() : "/" + product.getImageUrl())
+                    .toUriString();
+        }
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -81,7 +91,7 @@ public class ProductService {
                 .category(product.getCategory())
                 .unitType(product.getUnitType())
                 .stock(product.getStock())
-                .imageUrl(product.getImageUrl())
+                .imageUrl(fullImageUrl)
                 .isOrganic(product.getOrganic())
                 .build();
     }
