@@ -11,32 +11,18 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
-  const getImageUrl = (url: string | null) => {
-    if (!url) return '/placeholder.jpg';
-    
-    // If URL already contains the domain, use as is
-    if (url.includes('://')) return url;
-    
-    // Otherwise construct the full URL
-    const baseUrl = 'https://agriecommerce.onrender.com';
-    return `${baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
-  };
-
   return (
     <Card className="group hover:shadow-md transition-all duration-200 overflow-hidden border border-border/50 hover:border-primary/20 w-full max-w-[180px] sm:max-w-[200px]">
       <Link to={`/product/${product.id}`}>
         <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted/30 to-muted/10">
           <img
-            src={getImageUrl(product.imageUrl)}
+            src={product.image}
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/placeholder.jpg';
-            }}
           />
         </div>
       </Link>
-
+      
       <CardContent className="p-2">
         <div className="mb-2">
           <Link to={`/product/${product.id}`}>
@@ -45,17 +31,11 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             </h3>
           </Link>
           <div className="flex items-center gap-1 flex-wrap">
-            <Badge
-              variant="secondary"
-              className="text-[10px] px-1.5 py-0.5 hidden sm:inline-flex"
-            >
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 hidden sm:inline-flex">
               {product.category}
             </Badge>
             {product.isOrganic && (
-              <Badge
-                variant="secondary"
-                className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700"
-              >
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700">
                 <Leaf className="w-2.5 h-2.5 mr-0.5" />
                 <span className="hidden sm:inline">Organic</span>
                 <span className="sm:hidden">Org</span>
@@ -63,7 +43,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             )}
           </div>
         </div>
-
+        
         <div className="space-y-1.5">
           <div className="text-center">
             <span className="text-sm font-bold text-primary block">
@@ -73,7 +53,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
               /{product.unitType || 'kg'}
             </span>
           </div>
-
+          
           <Button
             onClick={() => onAddToCart(product)}
             size="sm"
