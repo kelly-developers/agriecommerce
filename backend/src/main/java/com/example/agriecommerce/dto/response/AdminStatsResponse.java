@@ -2,6 +2,7 @@ package com.example.agriecommerce.dto.response;
 
 import lombok.Builder;
 import lombok.Data;
+
 import java.math.BigDecimal;
 
 @Data
@@ -13,4 +14,7 @@ public class AdminStatsResponse {
     private BigDecimal totalRevenue;
     private long pendingOrders;
     private long lowStockProducts;
+    private double productGrowth;
+    private double revenueGrowth;
+    private double userGrowth;
 }

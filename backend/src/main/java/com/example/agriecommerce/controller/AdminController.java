@@ -1,48 +1,59 @@
 package com.example.agriecommerce.controller;
 
-import com.example.agriecommerce.dto.response.AdminStatsResponse;
-import com.example.agriecommerce.model.OrderStatus;
-import com.example.agriecommerce.repository.OrderRepository;
-import com.example.agriecommerce.repository.ProductRepository;
-import com.example.agriecommerce.repository.UserRepository;
+import com.example.agriecommerce.dto.response.*;
+import com.example.agriecommerce.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/admin/analytics")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
-    private final UserRepository userRepository;
-    private final ProductRepository productRepository;
-    private final OrderRepository orderRepository;
+    private final AdminService adminService;
 
-    @GetMapping("/stats")
+    @GetMapping("/dashboard-stats")
     public ResponseEntity<AdminStatsResponse> getDashboardStats() {
-        long totalUsers = userRepository.count();
-        long totalProducts = productRepository.count();
-        long totalOrders = orderRepository.count();
-        long pendingOrders = orderRepository.countByStatus(OrderStatus.PENDING);
-        long lowStockProducts = productRepository.countByStockLessThan(10);
+        return ResponseEntity.ok(adminService.getDashboardStats());
+    }
 
-        BigDecimal totalRevenue = orderRepository.sumTotalAmount() != null ?
-                orderRepository.sumTotalAmount() : BigDecimal.ZERO;
+    @GetMapping("/recent-orders")
+    public ResponseEntity<List<RecentOrderResponse>> getRecentOrders() {
+        return ResponseEntity.ok(adminService.getRecentOrders());
+    }
 
-        AdminStatsResponse response = AdminStatsResponse.builder()
-                .totalUsers(totalUsers)
-                .totalProducts(totalProducts)
-                .totalOrders(totalOrders)
-                .totalRevenue(totalRevenue)
-                .pendingOrders(pendingOrders)
-                .lowStockProducts(lowStockProducts)
-                .build();
+    @GetMapping("/popular-products")
+    public ResponseEntity<List<PopularProductResponse>> getPopularProducts() {
+        return ResponseEntity.ok(adminService.getPopularProducts());
+    }
 
-        return ResponseEntity.ok(response);
+    @GetMapping("/sales-trend")
+    public ResponseEntity<SalesTrendResponse> getSalesTrend(
+            @RequestParam(defaultValue = "month") String period) {
+        return ResponseEntity.ok(adminService.getSalesTrend(period));
+    }
+
+    @GetMapping("/user-stats")
+    public ResponseEntity<UserStatsResponse> getUserStats() {
+        return ResponseEntity.ok(adminService.getUserStats());
+    }
+
+    @GetMapping("/product-stats")
+    public ResponseEntity<ProductStatsResponse> getProductStats() {
+        return ResponseEntity.ok(adminService.getProductStats());
+    }
+
+    @GetMapping("/revenue-by-category")
+    public ResponseEntity<List<RevenueByCategoryResponse>> getRevenueByCategory() {
+        return ResponseEntity.ok(adminService.getRevenueByCategory());
+    }
+
+    @GetMapping("/order-status-distribution")
+    public ResponseEntity<OrderStatusDistributionResponse> getOrderStatusDistribution() {
+        return ResponseEntity.ok(adminService.getOrderStatusDistribution());
     }
 }

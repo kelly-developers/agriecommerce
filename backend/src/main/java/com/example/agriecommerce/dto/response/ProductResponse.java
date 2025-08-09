@@ -16,4 +16,7 @@ public class ProductResponse {
     private Integer stock;
     private String imageUrl;
     private Boolean isOrganic;
+    private long totalProducts;
+    private long outOfStock;
+    private long lowStock;
 }
