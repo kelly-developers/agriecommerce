@@ -111,7 +111,7 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Account Information */}
+        {/* the Account Information */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
