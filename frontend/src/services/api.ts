@@ -1,13 +1,14 @@
 import axios from 'axios';
 import { Product, CartItem, CustomerInfo, DeliveryInfo } from '@/types/product';
 
-const API_BASE_URL = 'https://agriecommerce.onrender.com/api/v1';
+const API_BASE_URL = process.env.BACKEND_URL || 'https://agriecommerce.onrender.com/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 // Add auth token to requests
@@ -24,9 +25,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized errors (e.g., redirect to login)
+      // Handle unauthorized errors
       console.error('Unauthorized access - please login again');
       window.location.href = '/login';
+    } else if (error.response?.status === 403) {
+      console.error('Forbidden - check your permissions');
+      // Optionally redirect or show error message
     }
     return Promise.reject(error);
   }
