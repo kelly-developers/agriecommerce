@@ -26,10 +26,43 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Handle unauthorized errors (e.g., redirect to login)
       console.error('Unauthorized access - please login again');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
+
+// Type definitions
+interface ProductRequest {
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  unitType: string;
+  stock: number;
+  imageUrl?: string;
+  isOrganic?: boolean;
+  subcategory?: string;
+  origin?: string;
+  nutritionalInfo?: string;
+}
+
+interface FarmerProductRequest extends ProductRequest {
+  // Additional farmer-specific fields if any
+}
+
+interface AddressRequest {
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+}
+
+interface ImageUploadResponse {
+  imageUrl: string;
+}
 
 // Auth API
 export const authAPI = {
@@ -43,20 +76,15 @@ export const authAPI = {
     return response.data;
   },
   
-  logout: async () => {
-    const response = await api.post('/auth/logout');
+  logout: async (refreshToken: string) => {
+    const response = await api.post('/auth/logout', { refreshToken });
     return response.data;
   },
   
-  refreshToken: async () => {
-    const response = await api.post('/auth/refresh');
+  refreshToken: async (refreshToken: string) => {
+    const response = await api.post('/auth/refresh', { refreshToken });
     return response.data;
-  },
-
-  adminCreateUser: async (userData: any) => {
-    const response = await api.post('/admin/users', userData);
-    return response.data;
-  },
+  }
 };
 
 // Products API
@@ -99,7 +127,7 @@ export const productsAPI = {
         'Content-Type': 'multipart/form-data'
       }
     });
-    return response.data;
+    return response.data as ImageUploadResponse;
   }
 };
 
@@ -118,17 +146,17 @@ export const cartAPI = {
     return response.data;
   },
   
-  addItem: async (productId: string, quantity: number) => {
+  addItem: async (productId: number, quantity: number) => {
     const response = await api.post('/cart/items', { productId, quantity });
     return response.data;
   },
   
-  updateItem: async (productId: string, quantity: number) => {
+  updateItem: async (productId: number, quantity: number) => {
     const response = await api.put(`/cart/items/${productId}`, { quantity });
     return response.data;
   },
   
-  removeItem: async (productId: string) => {
+  removeItem: async (productId: number) => {
     const response = await api.delete(`/cart/items/${productId}`);
     return response.data;
   },
@@ -150,7 +178,7 @@ export const ordersAPI = {
     return response.data;
   },
   
-  getAll: async (params?: { page?: number; size?: number }) => {
+  getUserOrders: async (params?: { page?: number; size?: number }) => {
     const response = await api.get('/orders', { params });
     return response.data;
   },
@@ -160,13 +188,13 @@ export const ordersAPI = {
     return response.data;
   },
   
-  updateStatus: async (id: string, status: string) => {
-    const response = await api.put(`/orders/admin/${id}/status`, { status });
+  getAllAdmin: async (params?: { page?: number; size?: number }) => {
+    const response = await api.get('/orders/admin', { params });
     return response.data;
   },
   
-  getAllAdmin: async (params?: { page?: number; size?: number }) => {
-    const response = await api.get('/orders/admin', { params });
+  updateStatus: async (id: string, status: string) => {
+    const response = await api.put(`/orders/admin/${id}/status`, {}, { params: { status } });
     return response.data;
   },
 };
@@ -189,14 +217,14 @@ export const usersAPI = {
   },
   
   updateUserStatus: async (id: string, status: string) => {
-    const response = await api.put(`/admin/users/${id}/status`, { status });
+    const response = await api.put(`/admin/users/${id}/status`, {}, { params: { status } });
     return response.data;
   },
 
   updateUserRole: async (id: string, role: string) => {
-    const response = await api.put(`/admin/users/${id}/role`, { role });
+    const response = await api.put(`/admin/users/${id}/role`, {}, { params: { role } });
     return response.data;
-  },
+  }
 };
 
 // Addresses API
@@ -206,12 +234,12 @@ export const addressesAPI = {
     return response.data;
   },
   
-  create: async (addressData: any) => {
+  create: async (addressData: AddressRequest) => {
     const response = await api.post('/addresses', addressData);
     return response.data;
   },
   
-  update: async (id: string, addressData: any) => {
+  update: async (id: string, addressData: AddressRequest) => {
     const response = await api.put(`/addresses/${id}`, addressData);
     return response.data;
   },
@@ -222,27 +250,39 @@ export const addressesAPI = {
   },
 };
 
-// M-Pesa Payment API
-export const mpesaAPI = {
-  initiate: async (paymentData: {
+// Payment API
+export const paymentAPI = {
+  processPayment: async (paymentData: {
+    amount: number;
+    paymentMethod: string;
+    paymentDetails: any;
+  }) => {
+    const response = await api.post('/payments', paymentData);
+    return response.data;
+  },
+  
+  getPaymentStatus: async (transactionId: string) => {
+    const response = await api.get(`/payments/status/${transactionId}`);
+    return response.data;
+  },
+  
+  initiateMpesaPayment: async (paymentData: {
     amount: number;
     phoneNumber: string;
-    accountReference: string;
-    transactionDesc: string;
   }) => {
     const response = await api.post('/payments/mpesa/stk-push', paymentData);
     return response.data;
   },
   
-  checkStatus: async (checkoutRequestId: string) => {
+  checkMpesaPaymentStatus: async (checkoutRequestId: string) => {
     const response = await api.get(`/payments/mpesa/status/${checkoutRequestId}`);
     return response.data;
-  },
+  }
 };
 
 // Farmers API
 export const farmersAPI = {
-  submitProduct: async (productData: any) => {
+  submitProduct: async (productData: FarmerProductRequest) => {
     const response = await api.post('/farmer/products', productData);
     return response.data;
   },
@@ -252,7 +292,7 @@ export const farmersAPI = {
     return response.data;
   },
   
-  updateProduct: async (id: string, productData: any) => {
+  updateProduct: async (id: string, productData: FarmerProductRequest) => {
     const response = await api.put(`/farmer/products/${id}`, productData);
     return response.data;
   },
@@ -263,41 +303,8 @@ export const farmersAPI = {
   }
 };
 
-// Admin API
-export const adminAPI = {
-  // User management
-  getAllUsers: async () => {
-    const response = await api.get('/admin/users');
-    return response.data;
-  },
-  
-  updateUserStatus: async (userId: string, status: string) => {
-    const response = await api.put(`/admin/users/${userId}/status`, { status });
-    return response.data;
-  },
-  
-  updateUserRole: async (userId: string, role: string) => {
-    const response = await api.put(`/admin/users/${userId}/role`, { role });
-    return response.data;
-  },
-  
-  createUser: async (userData: any) => {
-    const response = await api.post('/admin/users', userData);
-    return response.data;
-  },
-
-  // Order management
-  getAllOrders: async () => {
-    const response = await api.get('/orders/admin');
-    return response.data;
-  },
-  
-  updateOrderStatus: async (orderId: string, status: string) => {
-    const response = await api.put(`/orders/admin/${orderId}/status`, { status });
-    return response.data;
-  },
-
-  // Analytics
+// Admin Analytics API
+export const adminAnalyticsAPI = {
   getDashboardStats: async () => {
     const response = await api.get('/admin/analytics/dashboard-stats');
     return response.data;
@@ -331,20 +338,5 @@ export const adminAPI = {
     return response.data;
   }
 };
-
-// Type definitions
-interface ProductRequest {
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  unitType: string;
-  stock: number;
-  imageUrl?: string;
-  isOrganic?: boolean;
-  subcategory?: string;
-  origin?: string;
-  nutritionalInfo?: string;
-}
 
 export default api;
