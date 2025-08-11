@@ -1,5 +1,10 @@
 package com.example.agriecommerce.model;
 
-enum ProductStatus {
-    ACTIVE, INACTIVE, OUT_OF_STOCK
+public enum ProductStatus {
+    PENDING,
+    APPROVED,
+    REJECTED,
+    ACTIVE,
+    INACTIVE,
+    OUT_OF_STOCK
 }

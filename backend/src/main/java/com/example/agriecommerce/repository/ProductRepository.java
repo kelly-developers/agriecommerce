@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -32,4 +33,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p.category, SUM(oi.totalPrice) FROM Product p JOIN p.orderItems oi GROUP BY p.category")
     List<Object[]> sumRevenueByCategory();
+
+    List<Product> findByFarmerId(Long farmerId);
+
+    Optional<Product> findByIdAndFarmerId(Long id, Long farmerId);
 }
