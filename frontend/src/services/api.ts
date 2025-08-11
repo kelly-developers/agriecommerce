@@ -1,42 +1,89 @@
-import axios from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Product, CartItem, CustomerInfo, DeliveryInfo } from '@/types/product';
 
-const API_BASE_URL = process.env.BACKEND_URL || 'https://agriecommerce.onrender.com/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://agriecommerce.onrender.com/api/v1';
 
+// Create axios instance with default configuration
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: true, // Important for cookies/sessions if using them
 });
 
-// Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Error interceptor
-api.interceptors.response.use(
-  (response) => response,
+// Request interceptor to add auth token to requests
+api.interceptors.request.use(
+  (config: AxiosRequestConfig) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized errors
-      console.error('Unauthorized access - please login again');
-      window.location.href = '/login';
-    } else if (error.response?.status === 403) {
-      console.error('Forbidden - check your permissions');
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle token refresh and errors
+api.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as any;
+    
+    // Handle 401 Unauthorized (token expired)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+        
+        // Attempt to refresh tokens
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        
+        // Store new tokens
+        localStorage.setItem('authToken', accessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        
+        // Retry original request with new token
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails, clear tokens and redirect to login
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+    
+    // Handle 403 Forbidden (insufficient permissions)
+    if (error.response?.status === 403) {
+      console.error('Access forbidden - insufficient permissions');
       // Optionally redirect or show error message
     }
+    
     return Promise.reject(error);
   }
 );
 
 // Type definitions
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
 interface ProductRequest {
   name: string;
   description: string;
@@ -49,10 +96,6 @@ interface ProductRequest {
   subcategory?: string;
   origin?: string;
   nutritionalInfo?: string;
-}
-
-interface FarmerProductRequest extends ProductRequest {
-  // Additional farmer-specific fields if any
 }
 
 interface AddressRequest {
@@ -70,30 +113,69 @@ interface ImageUploadResponse {
 
 // Auth API
 export const authAPI = {
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string): Promise<LoginResponse> => {
     const response = await api.post('/auth/login', { email, password });
+    // Store tokens upon successful login
+    localStorage.setItem('authToken', response.data.accessToken);
+    localStorage.setItem('refreshToken', response.data.refreshToken);
     return response.data;
   },
   
-  register: async (userData: any) => {
+  register: async (userData: {
+    email: string;
+    password: string;
+    name: string;
+    role?: string;
+  }) => {
     const response = await api.post('/auth/register', userData);
     return response.data;
   },
   
-  logout: async (refreshToken: string) => {
-    const response = await api.post('/auth/logout', { refreshToken });
-    return response.data;
+  logout: async (): Promise<void> => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        await api.post('/auth/logout', { refreshToken });
+      }
+    } finally {
+      // Always clear tokens on logout
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+    }
   },
   
-  refreshToken: async (refreshToken: string) => {
+  refreshToken: async (): Promise<LoginResponse> => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
     const response = await api.post('/auth/refresh', { refreshToken });
+    // Update stored tokens
+    localStorage.setItem('authToken', response.data.accessToken);
+    localStorage.setItem('refreshToken', response.data.refreshToken);
     return response.data;
-  }
+  },
+
+  adminCreateUser: async (userData: {
+    email: string;
+    password: string;
+    name: string;
+    role: string;
+  }) => {
+    const response = await api.post('/admin/users', userData);
+    return response.data;
+  },
 };
 
 // Products API
 export const productsAPI = {
-  getAll: async (params?: { category?: string; page?: number; size?: number }) => {
+  getAll: async (params?: { 
+    category?: string; 
+    page?: number; 
+    size?: number;
+    search?: string;
+    sort?: string;
+  }) => {
     const response = await api.get('/products', { params });
     return response.data;
   },
@@ -108,7 +190,7 @@ export const productsAPI = {
     return response.data;
   },
   
-  update: async (id: string, productData: ProductRequest) => {
+  update: async (id: string, productData: Partial<ProductRequest>) => {
     const response = await api.put(`/products/${id}`, productData);
     return response.data;
   },
@@ -123,7 +205,7 @@ export const productsAPI = {
     return response.data;
   },
 
-  uploadImage: async (file: File) => {
+  uploadImage: async (file: File): Promise<ImageUploadResponse> => {
     const formData = new FormData();
     formData.append('image', file);
     const response = await api.post('/products/upload', formData, {
@@ -131,7 +213,7 @@ export const productsAPI = {
         'Content-Type': 'multipart/form-data'
       }
     });
-    return response.data as ImageUploadResponse;
+    return response.data;
   }
 };
 
@@ -141,26 +223,36 @@ export const categoriesAPI = {
     const response = await api.get('/categories');
     return response.data;
   },
+  
+  create: async (name: string) => {
+    const response = await api.post('/categories', { name });
+    return response.data;
+  },
+  
+  delete: async (id: string) => {
+    const response = await api.delete(`/categories/${id}`);
+    return response.data;
+  }
 };
 
 // Cart API
 export const cartAPI = {
-  get: async () => {
+  get: async (): Promise<CartItem[]> => {
     const response = await api.get('/cart');
     return response.data;
   },
   
-  addItem: async (productId: number, quantity: number) => {
+  addItem: async (productId: string, quantity: number) => {
     const response = await api.post('/cart/items', { productId, quantity });
     return response.data;
   },
   
-  updateItem: async (productId: number, quantity: number) => {
+  updateItem: async (productId: string, quantity: number) => {
     const response = await api.put(`/cart/items/${productId}`, { quantity });
     return response.data;
   },
   
-  removeItem: async (productId: number) => {
+  removeItem: async (productId: string) => {
     const response = await api.delete(`/cart/items/${productId}`);
     return response.data;
   },
@@ -177,12 +269,21 @@ export const ordersAPI = {
     customerInfo: CustomerInfo;
     deliveryInfo: DeliveryInfo;
     paymentReference: string;
+    items: Array<{
+      productId: string;
+      quantity: number;
+      price: number;
+    }>;
   }) => {
     const response = await api.post('/orders', orderData);
     return response.data;
   },
   
-  getUserOrders: async (params?: { page?: number; size?: number }) => {
+  getAll: async (params?: { 
+    page?: number; 
+    size?: number;
+    status?: string;
+  }) => {
     const response = await api.get('/orders', { params });
     return response.data;
   },
@@ -192,13 +293,18 @@ export const ordersAPI = {
     return response.data;
   },
   
-  getAllAdmin: async (params?: { page?: number; size?: number }) => {
-    const response = await api.get('/orders/admin', { params });
+  updateStatus: async (id: string, status: string) => {
+    const response = await api.put(`/orders/admin/${id}/status`, { status });
     return response.data;
   },
   
-  updateStatus: async (id: string, status: string) => {
-    const response = await api.put(`/orders/admin/${id}/status`, {}, { params: { status } });
+  getAllAdmin: async (params?: { 
+    page?: number; 
+    size?: number;
+    status?: string;
+    userId?: string;
+  }) => {
+    const response = await api.get('/orders/admin', { params });
     return response.data;
   },
 };
@@ -210,30 +316,40 @@ export const usersAPI = {
     return response.data;
   },
   
-  updateProfile: async (userData: any) => {
+  updateProfile: async (userData: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    avatar?: string;
+  }) => {
     const response = await api.put('/users/profile', userData);
     return response.data;
   },
   
-  getAllAdmin: async (params?: { page?: number; size?: number }) => {
+  getAllAdmin: async (params?: { 
+    page?: number; 
+    size?: number;
+    role?: string;
+    status?: string;
+  }) => {
     const response = await api.get('/admin/users', { params });
     return response.data;
   },
   
   updateUserStatus: async (id: string, status: string) => {
-    const response = await api.put(`/admin/users/${id}/status`, {}, { params: { status } });
+    const response = await api.put(`/admin/users/${id}/status`, { status });
     return response.data;
   },
 
   updateUserRole: async (id: string, role: string) => {
-    const response = await api.put(`/admin/users/${id}/role`, {}, { params: { role } });
+    const response = await api.put(`/admin/users/${id}/role`, { role });
     return response.data;
-  }
+  },
 };
 
 // Addresses API
 export const addressesAPI = {
-  getAll: async () => {
+  getAll: async (): Promise<AddressRequest[]> => {
     const response = await api.get('/addresses');
     return response.data;
   },
@@ -243,7 +359,7 @@ export const addressesAPI = {
     return response.data;
   },
   
-  update: async (id: string, addressData: AddressRequest) => {
+  update: async (id: string, addressData: Partial<AddressRequest>) => {
     const response = await api.put(`/addresses/${id}`, addressData);
     return response.data;
   },
@@ -256,23 +372,21 @@ export const addressesAPI = {
 
 // Payment API
 export const paymentAPI = {
-  processPayment: async (paymentData: {
-    amount: number;
-    paymentMethod: string;
-    paymentDetails: any;
-  }) => {
-    const response = await api.post('/payments', paymentData);
+  initiatePayment: async (amount: number, currency: string = 'KES') => {
+    const response = await api.post('/payments/initiate', { amount, currency });
     return response.data;
   },
   
-  getPaymentStatus: async (transactionId: string) => {
-    const response = await api.get(`/payments/status/${transactionId}`);
+  verifyPayment: async (paymentId: string) => {
+    const response = await api.get(`/payments/verify/${paymentId}`);
     return response.data;
   },
   
   initiateMpesaPayment: async (paymentData: {
     amount: number;
     phoneNumber: string;
+    accountReference?: string;
+    transactionDesc?: string;
   }) => {
     const response = await api.post('/payments/mpesa/stk-push', paymentData);
     return response.data;
@@ -286,7 +400,7 @@ export const paymentAPI = {
 
 // Farmers API
 export const farmersAPI = {
-  submitProduct: async (productData: FarmerProductRequest) => {
+  submitProduct: async (productData: ProductRequest) => {
     const response = await api.post('/farmer/products', productData);
     return response.data;
   },
@@ -296,7 +410,7 @@ export const farmersAPI = {
     return response.data;
   },
   
-  updateProduct: async (id: string, productData: FarmerProductRequest) => {
+  updateProduct: async (id: string, productData: Partial<ProductRequest>) => {
     const response = await api.put(`/farmer/products/${id}`, productData);
     return response.data;
   },
@@ -307,36 +421,49 @@ export const farmersAPI = {
   }
 };
 
-// Admin Analytics API
-export const adminAnalyticsAPI = {
+// Admin API
+export const adminAPI = {
   getDashboardStats: async () => {
     const response = await api.get('/admin/analytics/dashboard-stats');
     return response.data;
   },
-  getRecentOrders: async () => {
-    const response = await api.get('/admin/analytics/recent-orders');
+  
+  getRecentOrders: async (limit: number = 5) => {
+    const response = await api.get('/admin/analytics/recent-orders', {
+      params: { limit }
+    });
     return response.data;
   },
-  getPopularProducts: async () => {
-    const response = await api.get('/admin/analytics/popular-products');
+  
+  getPopularProducts: async (limit: number = 5) => {
+    const response = await api.get('/admin/analytics/popular-products', {
+      params: { limit }
+    });
     return response.data;
   },
-  getSalesTrend: async (period: string) => {
-    const response = await api.get(`/admin/analytics/sales-trend?period=${period}`);
+  
+  getSalesTrend: async (period: 'day' | 'week' | 'month' | 'year' = 'month') => {
+    const response = await api.get('/admin/analytics/sales-trend', {
+      params: { period }
+    });
     return response.data;
   },
+  
   getUserStats: async () => {
     const response = await api.get('/admin/analytics/user-stats');
     return response.data;
   },
+  
   getProductStats: async () => {
     const response = await api.get('/admin/analytics/product-stats');
     return response.data;
   },
+  
   getRevenueByCategory: async () => {
     const response = await api.get('/admin/analytics/revenue-by-category');
     return response.data;
   },
+  
   getOrderStatusDistribution: async () => {
     const response = await api.get('/admin/analytics/order-status-distribution');
     return response.data;
