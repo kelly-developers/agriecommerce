@@ -28,6 +28,9 @@ const productSchema = z.object({
   unitType: z.enum(['kg', 'bunch', 'piece', 'packet', 'kit', 'unit']),
   imageUrl: z.string().url('Please provide a valid image URL').optional(),
   imageFile: z.any().optional()
+}).refine(data => data.imageUrl || data.imageFile, {
+  message: "Either image URL or file is required",
+  path: ["imageUrl"]
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -80,6 +83,7 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
       form.setValue('imageFile', file);
       form.setValue('imageUrl', '');
       setShowUrlInput(false);
+      form.clearErrors('imageUrl');
       
       const reader = new FileReader();
       reader.onload = () => {
@@ -96,11 +100,15 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    form.setError('imageUrl', { type: 'manual', message: 'Either image URL or file is required' });
   };
 
   const uploadImage = async (file: File) => {
     try {
-      const response = await farmersAPI.uploadImage(file);
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await farmersAPI.uploadImage(formData);
       return response.imageUrl;
     } catch (error) {
       console.error('Image upload failed:', error);
@@ -114,11 +122,19 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
   };
 
   const onSubmit = async (data: ProductFormData) => {
+    // Validate form before submission
+    const isValid = await form.trigger();
+    if (!isValid) {
+      console.log('Form validation errors:', form.formState.errors);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       let imageUrl = data.imageUrl;
       
       if (data.imageFile) {
+        console.log('Uploading image file...');
         imageUrl = await uploadImage(data.imageFile);
       }
 
@@ -136,14 +152,21 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
         imageUrl
       };
 
+      console.log('Submitting product data:', productData);
       await farmersAPI.submitProduct(productData);
+      
       toast({
         title: "Success",
         description: "Product submitted for review successfully!"
       });
+      
+      // Reset form and close dialog
       form.reset();
+      setImagePreview(null);
       onProductSubmitted();
+      onOpenChange(false);
     } catch (error: any) {
+      console.error('Submission error:', error);
       toast({
         title: "Error",
         description: error.response?.data?.message || "Failed to submit product",
@@ -240,6 +263,11 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
                     )}
                   />
                 )}
+                {!imagePreview && !form.watch('imageUrl') && (
+                  <p className="text-sm text-destructive">
+                    Please upload an image or provide an image URL
+                  </p>
+                )}
               </div>
             </div>
 
@@ -264,7 +292,10 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select category" />
@@ -315,7 +346,10 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
                         step="0.01"
                         placeholder="0.00"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          field.onChange(isNaN(value) ? 0 : value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -334,7 +368,10 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
                         type="number"
                         placeholder="1"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          field.onChange(isNaN(value) ? 1 : value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -400,7 +437,7 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {selectedCategory?.subcategories.map((subcategory) => (
+                        {selectedCategory?.subcategories?.map((subcategory) => (
                           <SelectItem key={subcategory.id} value={subcategory.id}>
                             {subcategory.name}
                           </SelectItem>
@@ -455,7 +492,11 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  form.reset();
+                  setImagePreview(null);
+                  onOpenChange(false);
+                }}
                 disabled={isSubmitting}
               >
                 Cancel
