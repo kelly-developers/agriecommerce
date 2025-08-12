@@ -47,7 +47,6 @@ const FarmerDashboard = () => {
       const response = await farmersAPI.getMyProducts();
       console.log('API Products Response:', response.data);
 
-      // Ensure we have an array regardless of API shape
       let productsData: ProductSubmission[] = [];
 
       if (Array.isArray(response.data)) {
@@ -56,12 +55,16 @@ const FarmerDashboard = () => {
         productsData = response.data.products;
       }
 
+      // Ensure it's always an array
+      if (!Array.isArray(productsData)) {
+        productsData = [];
+      }
+
       setProducts(productsData);
 
-      // Calculate stats safely
-      const pending = productsData.filter((p) => p.status === 'pending').length;
-      const approved = productsData.filter((p) => p.status === 'approved').length;
-      const rejected = productsData.filter((p) => p.status === 'rejected').length;
+      const pending = productsData.filter(p => p.status === 'pending').length;
+      const approved = productsData.filter(p => p.status === 'approved').length;
+      const rejected = productsData.filter(p => p.status === 'rejected').length;
 
       setStats({
         pending,
@@ -176,32 +179,31 @@ const FarmerDashboard = () => {
           </TabsList>
 
           <TabsContent value="all">
-            <MyProducts products={products} onProductUpdate={loadProducts} />
+            <MyProducts products={products || []} onProductUpdate={loadProducts} />
           </TabsContent>
 
           <TabsContent value="pending">
             <MyProducts
-              products={(products || []).filter((p) => p.status === 'pending')}
+              products={(products || []).filter(p => p.status === 'pending')}
               onProductUpdate={loadProducts}
             />
           </TabsContent>
 
           <TabsContent value="approved">
             <MyProducts
-              products={(products || []).filter((p) => p.status === 'approved')}
+              products={(products || []).filter(p => p.status === 'approved')}
               onProductUpdate={loadProducts}
             />
           </TabsContent>
 
           <TabsContent value="rejected">
             <MyProducts
-              products={(products || []).filter((p) => p.status === 'rejected')}
+              products={(products || []).filter(p => p.status === 'rejected')}
               onProductUpdate={loadProducts}
             />
           </TabsContent>
         </Tabs>
 
-        {/* Product Submission Form Dialog */}
         <ProductSubmissionForm
           open={showForm}
           onOpenChange={setShowForm}
