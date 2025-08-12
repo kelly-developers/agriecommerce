@@ -45,20 +45,33 @@ const FarmerDashboard = () => {
   const loadProducts = async () => {
     try {
       const response = await farmersAPI.getMyProducts();
-      setProducts(response.data);
-      
-      // Calculate stats
-      const pending = response.data.filter((p: ProductSubmission) => p.status === 'pending').length;
-      const approved = response.data.filter((p: ProductSubmission) => p.status === 'approved').length;
-      const rejected = response.data.filter((p: ProductSubmission) => p.status === 'rejected').length;
-      
+      console.log('API Products Response:', response.data);
+
+      // Ensure we have an array regardless of API shape
+      let productsData: ProductSubmission[] = [];
+
+      if (Array.isArray(response.data)) {
+        productsData = response.data;
+      } else if (Array.isArray(response.data?.products)) {
+        productsData = response.data.products;
+      }
+
+      setProducts(productsData);
+
+      // Calculate stats safely
+      const pending = productsData.filter((p) => p.status === 'pending').length;
+      const approved = productsData.filter((p) => p.status === 'approved').length;
+      const rejected = productsData.filter((p) => p.status === 'rejected').length;
+
       setStats({
         pending,
         approved,
         rejected,
-        total: response.data.length
+        total: productsData.length
       });
+
     } catch (error) {
+      console.error(error);
       toast({
         title: "Error",
         description: "Failed to load your products",
@@ -101,7 +114,9 @@ const FarmerDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Farmer Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {user?.firstName}! Manage your product listings</p>
+            <p className="text-muted-foreground">
+              Welcome back, {user?.firstName}! Manage your product listings
+            </p>
           </div>
           <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
@@ -120,7 +135,7 @@ const FarmerDashboard = () => {
               <div className="text-2xl font-bold">{stats.total}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
@@ -130,7 +145,7 @@ const FarmerDashboard = () => {
               <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Approved</CardTitle>
@@ -140,7 +155,7 @@ const FarmerDashboard = () => {
               <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Rejected</CardTitle>
@@ -165,29 +180,29 @@ const FarmerDashboard = () => {
           </TabsContent>
 
           <TabsContent value="pending">
-            <MyProducts 
-              products={products.filter(p => p.status === 'pending')} 
-              onProductUpdate={loadProducts} 
+            <MyProducts
+              products={(products || []).filter((p) => p.status === 'pending')}
+              onProductUpdate={loadProducts}
             />
           </TabsContent>
 
           <TabsContent value="approved">
-            <MyProducts 
-              products={products.filter(p => p.status === 'approved')} 
-              onProductUpdate={loadProducts} 
+            <MyProducts
+              products={(products || []).filter((p) => p.status === 'approved')}
+              onProductUpdate={loadProducts}
             />
           </TabsContent>
 
           <TabsContent value="rejected">
-            <MyProducts 
-              products={products.filter(p => p.status === 'rejected')} 
-              onProductUpdate={loadProducts} 
+            <MyProducts
+              products={(products || []).filter((p) => p.status === 'rejected')}
+              onProductUpdate={loadProducts}
             />
           </TabsContent>
         </Tabs>
 
         {/* Product Submission Form Dialog */}
-        <ProductSubmissionForm 
+        <ProductSubmissionForm
           open={showForm}
           onOpenChange={setShowForm}
           onProductSubmitted={handleProductSubmitted}
