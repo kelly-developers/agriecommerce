@@ -398,6 +398,24 @@ export const paymentAPI = {
   }
 };
 
+// Mpesa API - Added this new export to match the import in MpesaPayment.tsx
+export const mpesaAPI = {
+  initiatePayment: async (paymentData: {
+    amount: number;
+    phoneNumber: string;
+    accountReference?: string;
+    transactionDesc?: string;
+  }) => {
+    const response = await api.post('/payments/mpesa/stk-push', paymentData);
+    return response.data;
+  },
+  
+  checkPaymentStatus: async (checkoutRequestId: string) => {
+    const response = await api.get(`/payments/mpesa/status/${checkoutRequestId}`);
+    return response.data;
+  }
+};
+
 // Farmers API
 export const farmersAPI = {
   submitProduct: async (productData: ProductRequest) => {
