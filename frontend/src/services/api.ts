@@ -310,6 +310,7 @@ export const ordersAPI = {
 };
 
 // Users API
+// Users API
 export const usersAPI = {
   getProfile: async () => {
     const response = await api.get('/users/profile');

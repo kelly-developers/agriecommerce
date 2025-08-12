@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,7 +18,7 @@ import { categories } from '@/data/products';
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  price: z.number().min(0.01, 'Price must be at least 0.01'),
+  price: z.number().min(0, 'Price must be positive'),
   category: z.string().min(1, 'Category is required'),
   subcategory: z.string().optional(),
   stock: z.number().min(1, 'Stock must be at least 1'),
@@ -75,14 +75,6 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
     }
   });
 
-  // Debugging: Log form state changes
-  useEffect(() => {
-    const subscription = form.watch((value, { name, type }) => {
-      console.log('Form field changed:', { name, type, value });
-    });
-    return () => subscription.unsubscribe();
-  }, [form.watch]);
-
   const selectedCategory = categories.find(cat => cat.id === form.watch('category'));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,12 +105,10 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
 
   const uploadImage = async (file: File) => {
     try {
-      console.log('Starting image upload...');
       const formData = new FormData();
       formData.append('image', file);
       
       const response = await farmersAPI.uploadImage(formData);
-      console.log('Image upload response:', response);
       return response.imageUrl;
     } catch (error) {
       console.error('Image upload failed:', error);
@@ -132,32 +122,20 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
   };
 
   const onSubmit = async (data: ProductFormData) => {
-    console.log('Form submission initiated with data:', data);
-    
-    // First validate the form
+    // Validate form before submission
     const isValid = await form.trigger();
-    console.log('Form validation result:', isValid);
-    console.log('Form errors:', form.formState.errors);
-    
     if (!isValid) {
-      toast({
-        title: "Validation Error",
-        description: "Please fix the errors in the form before submitting.",
-        variant: "destructive"
-      });
+      console.log('Form validation errors:', form.formState.errors);
       return;
     }
 
     setIsSubmitting(true);
-    console.log('Starting submission process...');
-
     try {
       let imageUrl = data.imageUrl;
       
       if (data.imageFile) {
-        console.log('Processing image file upload...');
+        console.log('Uploading image file...');
         imageUrl = await uploadImage(data.imageFile);
-        console.log('Received image URL:', imageUrl);
       }
 
       const productData = {
@@ -174,11 +152,8 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
         imageUrl
       };
 
-      console.log('Prepared product data for submission:', productData);
-      
-      console.log('Calling farmersAPI.submitProduct...');
-      const response = await farmersAPI.submitProduct(productData);
-      console.log('API response:', response);
+      console.log('Submitting product data:', productData);
+      await farmersAPI.submitProduct(productData);
       
       toast({
         title: "Success",
@@ -192,25 +167,13 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
       onOpenChange(false);
     } catch (error: any) {
       console.error('Submission error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        stack: error.stack
-      });
-      
-      let errorMessage = "Failed to submit product";
-      if (error.response) {
-        errorMessage = error.response.data?.message || error.response.statusText || errorMessage;
-      }
-      
       toast({
         title: "Error",
-        description: errorMessage,
+        description: error.response?.data?.message || "Failed to submit product",
         variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
-      console.log('Submission process completed');
     }
   };
 
@@ -222,18 +185,308 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
         </DialogHeader>
 
         <Form {...form}>
-          <form 
-            onSubmit={(e) => {
-              console.log('Form submit event triggered');
-              e.preventDefault(); // Prevent default form submission
-              form.handleSubmit(onSubmit)(e).catch(error => {
-                console.error('Form submission error:', error);
-              });
-            }} 
-            className="space-y-4"
-          >
-            {/* Rest of your form fields */}
-            {/* ... */}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Image Upload Section */}
+            <div className="space-y-2">
+              <Label>Product Image</Label>
+              <div className="flex flex-col gap-4">
+                {imagePreview ? (
+                  <div className="relative group">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-48 object-contain rounded-md border bg-muted"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 rounded-full bg-background/80 hover:bg-background"
+                      onClick={handleRemoveImage}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center w-full h-48 border-2 border-dashed rounded-md bg-muted/50">
+                    <span className="text-muted-foreground">No image selected</span>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <ImagePlus className="w-4 h-4 mr-2" />
+                    Upload Image
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowUrlInput(!showUrlInput);
+                      if (form.getValues('imageFile')) handleRemoveImage();
+                    }}
+                  >
+                    <Link className="w-4 h-4 mr-2" />
+                    {showUrlInput ? 'Hide URL' : 'Use URL'}
+                  </Button>
+                </div>
+
+                {showUrlInput && (
+                  <FormField
+                    control={form.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Image URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/image.jpg"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                {!imagePreview && !form.watch('imageUrl') && (
+                  <p className="text-sm text-destructive">
+                    Please upload an image or provide an image URL
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter product name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe your product..." 
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price (KSH)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          field.onChange(isNaN(value) ? 0 : value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="stock"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Stock Quantity</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        placeholder="1"
+                        {...field}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          field.onChange(isNaN(value) ? 1 : value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="unitType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {unitTypes.map((unit) => (
+                          <SelectItem key={unit.value} value={unit.value}>
+                            {unit.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="origin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Origin/Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Nakuru County" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="subcategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={!selectedCategory}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subcategory" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {selectedCategory?.subcategories?.map((subcategory) => (
+                          <SelectItem key={subcategory.id} value={subcategory.id}>
+                            {subcategory.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="nutritionalInfo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nutritional Information (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Nutritional benefits and information..."
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isOrganic"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Organic Product</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Is this product organically grown?
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end gap-3 pt-4">
               <Button 
@@ -248,11 +501,7 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                onClick={() => console.log('Submit button clicked')}
-              >
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Submit for Review
               </Button>
