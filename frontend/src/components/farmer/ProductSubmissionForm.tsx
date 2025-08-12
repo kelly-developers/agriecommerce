@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { farmersAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ImagePlus, Link, X } from 'lucide-react';
+import { categories } from '@/data/products';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -25,7 +26,8 @@ const productSchema = z.object({
   nutritionalInfo: z.string().optional(),
   isOrganic: z.boolean(),
   unitType: z.enum(['kg', 'bunch', 'piece', 'packet', 'kit', 'unit']),
-  image: z.string().url('Please provide a valid image URL')
+  imageUrl: z.string().url('Please provide a valid image URL').optional(),
+  imageFile: z.any().optional()
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -35,16 +37,6 @@ interface ProductSubmissionFormProps {
   onOpenChange: (open: boolean) => void;
   onProductSubmitted: () => void;
 }
-
-const categories = [
-  'Leafy Greens',
-  'Vegetables',
-  'Fruits',
-  'Herbs',
-  'Seeds',
-  'Farm Tools',
-  'Organic Products'
-];
 
 const unitTypes = [
   { value: 'kg', label: 'Kilogram (kg)' },
@@ -57,7 +49,10 @@ const unitTypes = [
 
 export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }: ProductSubmissionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -72,14 +67,76 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
       nutritionalInfo: '',
       isOrganic: false,
       unitType: 'kg',
-      image: ''
+      imageUrl: '',
+      imageFile: null
     }
   });
+
+  const selectedCategory = categories.find(cat => cat.id === form.watch('category'));
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      form.setValue('imageFile', file);
+      form.setValue('imageUrl', '');
+      setShowUrlInput(false);
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    form.setValue('imageFile', null);
+    form.setValue('imageUrl', '');
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImage = async (file: File) => {
+    try {
+      const response = await farmersAPI.uploadImage(file);
+      return response.imageUrl;
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      toast({
+        title: "Image Upload Failed",
+        description: "Could not upload the image. Please try again.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
 
   const onSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
-      await farmersAPI.submitProduct(data);
+      let imageUrl = data.imageUrl;
+      
+      if (data.imageFile) {
+        imageUrl = await uploadImage(data.imageFile);
+      }
+
+      const productData = {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        category: data.category,
+        subcategory: data.subcategory,
+        stock: data.stock,
+        origin: data.origin,
+        nutritionalInfo: data.nutritionalInfo,
+        isOrganic: data.isOrganic,
+        unitType: data.unitType,
+        imageUrl
+      };
+
+      await farmersAPI.submitProduct(productData);
       toast({
         title: "Success",
         description: "Product submitted for review successfully!"
@@ -106,6 +163,86 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Image Upload Section */}
+            <div className="space-y-2">
+              <Label>Product Image</Label>
+              <div className="flex flex-col gap-4">
+                {imagePreview ? (
+                  <div className="relative group">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-48 object-contain rounded-md border bg-muted"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 rounded-full bg-background/80 hover:bg-background"
+                      onClick={handleRemoveImage}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center w-full h-48 border-2 border-dashed rounded-md bg-muted/50">
+                    <span className="text-muted-foreground">No image selected</span>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <ImagePlus className="w-4 h-4 mr-2" />
+                    Upload Image
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowUrlInput(!showUrlInput);
+                      if (form.getValues('imageFile')) handleRemoveImage();
+                    }}
+                  >
+                    <Link className="w-4 h-4 mr-2" />
+                    {showUrlInput ? 'Hide URL' : 'Use URL'}
+                  </Button>
+                </div>
+
+                {showUrlInput && (
+                  <FormField
+                    control={form.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Image URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/image.jpg"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -135,8 +272,8 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
                       </FormControl>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -251,32 +388,30 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
                 name="subcategory"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Subcategory (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Organic, Fresh" {...field} />
-                    </FormControl>
+                    <FormLabel>Subcategory</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={!selectedCategory}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subcategory" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {selectedCategory?.subcategories.map((subcategory) => (
+                          <SelectItem key={subcategory.id} value={subcategory.id}>
+                            {subcategory.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="image"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product Image URL</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="https://example.com/image.jpg" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}
