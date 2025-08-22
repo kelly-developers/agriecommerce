@@ -37,8 +37,8 @@ public class FarmerService {
         product.setNutritionalInfo(request.getNutritionalInfo());
         product.setOrganic(request.isOrganic());
         product.setUnitType(request.getUnitType());
-        product.setStatus(ProductStatus.PENDING);
         product.setFarmer(farmer);
+        // REMOVED: product.setStatus(ProductStatus.PENDING); - Let the entity default handle it
 
         Product savedProduct = productRepository.save(product);
         return mapToProductResponse(savedProduct);

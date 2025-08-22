@@ -131,12 +131,13 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
         imageUrl = await uploadImage(imageFile);
       }
 
+      // REMOVE the status field - backend should handle it
       const productData = {
         ...formData,
         price: Number(formData.price),
         stock: Number(formData.stock),
         imageUrl: imageUrl || undefined,
-        status: 'pending' as const // Set status to pending for admin review
+        // REMOVED: status: 'pending' as const
       };
 
       await farmersAPI.submitProduct(productData);
@@ -381,7 +382,7 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
               onChange={(e) => setFormData(prev => ({ ...prev, nutritionalInfo: e.target.value }))}
               placeholder="Rich in vitamins, minerals..."
             />
-          </div>
+            </div>
 
           <div className="flex items-center space-x-2">
             <Switch

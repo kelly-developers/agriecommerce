@@ -18,6 +18,7 @@ public class Product {
     private String rejectionReason;
     private LocalDateTime submittedAt;
     private LocalDateTime reviewedAt;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -43,13 +44,12 @@ public class Product {
     @Min(0)
     private Integer stock;
 
-
     private String imageUrl;
 
     private Boolean isOrganic = false;
 
     @Enumerated(EnumType.STRING)
-    private ProductStatus status = ProductStatus.ACTIVE;
+    private ProductStatus status = ProductStatus.PENDING; // Changed default to PENDING
 
     @Column(name = "created_at")
     private Date createdAt = new Date();
@@ -66,6 +66,20 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<OrderItem> orderItems = new HashSet<>();
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+        if (this.farmer != null) {
+            this.submittedAt = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = new Date();
+    }
 
     // Constructors
     public Product() {}
@@ -198,7 +212,6 @@ public class Product {
         this.orderItems = orderItems;
     }
 
-    // Add these new getters and setters:
     public String getSubcategory() {
         return subcategory;
     }
@@ -250,11 +263,4 @@ public class Product {
     public boolean isOrganic() {
         return isOrganic != null && isOrganic;
     }
-
-
-
 }
-
-//enum ProductStatus {
-//    ACTIVE, INACTIVE, OUT_OF_STOCK
-//}
