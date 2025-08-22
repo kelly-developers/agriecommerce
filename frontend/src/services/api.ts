@@ -439,7 +439,7 @@ export const mpesaAPI = {
   }
 };
 
-// Farmers API
+// Farmers API - UPDATED WITH UPLOADIMAGE METHOD
 export const farmersAPI = {
   submitProduct: async (productData: any) => {
     try {
@@ -463,6 +463,18 @@ export const farmersAPI = {
   
   deleteProduct: async (id: string) => {
     const response = await api.delete(`/farmer/products/${id}`);
+    return response.data;
+  },
+
+  // ADDED THE MISSING UPLOADIMAGE METHOD - Using the existing products upload endpoint
+  uploadImage: async (file: File): Promise<ImageUploadResponse> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await api.post('/products/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     return response.data;
   }
 };
