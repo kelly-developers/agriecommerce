@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { ProductSubmissionForm } from '@/components/farmer/ProductForm';
+import { ProductForm } from '@/components/admin/ProductForm';
 import { MyProducts } from '@/components/farmer/MyProducts';
 import { useAuth } from '@/contexts/AuthContext';
 import { farmersAPI } from '@/services/api';
