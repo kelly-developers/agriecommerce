@@ -162,7 +162,7 @@ export const authAPI = {
     name: string;
     role: string;
   }) => {
-    const response = await api.post('/admin/users', userData);
+    const response = await api.post('/auth/register', userData); // Use existing register endpoint
     return response.data;
   },
 };
@@ -310,7 +310,6 @@ export const ordersAPI = {
 };
 
 // Users API
-// Users API
 export const usersAPI = {
   getProfile: async () => {
     const response = await api.get('/users/profile');
@@ -333,7 +332,7 @@ export const usersAPI = {
     role?: string;
     status?: string;
   }) => {
-    const response = await api.get('/admin/users', { params });
+    const response = await api.get('/users/admin', { params });
     return response.data;
   },
   
