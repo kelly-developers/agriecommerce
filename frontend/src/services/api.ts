@@ -1,7 +1,10 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Product, CartItem, CustomerInfo, DeliveryInfo } from '@/types/product';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://agriecommerce.onrender.com/api/v1';
+// Use a direct URL or window.env for browser environment
+const API_BASE_URL = typeof window !== 'undefined' 
+  ? (window as any).env?.NEXT_PUBLIC_API_BASE_URL || 'https://agriecommerce.onrender.com/api/v1'
+  : process.env.NEXT_PUBLIC_API_BASE_URL || 'https://agriecommerce.onrender.com/api/v1';
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -15,10 +18,13 @@ const api = axios.create({
 // Request interceptor to add auth token to requests
 api.interceptors.request.use(
   (config: AxiosRequestConfig) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
+    // Check if we're in a browser environment before accessing localStorage
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -38,6 +44,11 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
+        // Check if we're in a browser environment
+        if (typeof window === 'undefined') {
+          throw new Error('Not in browser environment');
+        }
+        
         const refreshToken = localStorage.getItem('refreshToken');
         if (!refreshToken) {
           throw new Error('No refresh token available');
@@ -56,9 +67,11 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         // If refresh fails, clear tokens and redirect to login
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('refreshToken');
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
@@ -116,8 +129,10 @@ export const authAPI = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
     const response = await api.post('/auth/login', { email, password });
     // Store tokens upon successful login
-    localStorage.setItem('authToken', response.data.accessToken);
-    localStorage.setItem('refreshToken', response.data.refreshToken);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('authToken', response.data.accessToken);
+      localStorage.setItem('refreshToken', response.data.refreshToken);
+    }
     return response.data;
   },
   
@@ -133,18 +148,26 @@ export const authAPI = {
   
   logout: async (): Promise<void> => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        await api.post('/auth/logout', { refreshToken });
+      if (typeof window !== 'undefined') {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          await api.post('/auth/logout', { refreshToken });
+        }
       }
     } finally {
       // Always clear tokens on logout
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('refreshToken');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+      }
     }
   },
   
   refreshToken: async (): Promise<LoginResponse> => {
+    if (typeof window === 'undefined') {
+      throw new Error('Not in browser environment');
+    }
+    
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) {
       throw new Error('No refresh token available');
@@ -162,7 +185,7 @@ export const authAPI = {
     name: string;
     role: string;
   }) => {
-    const response = await api.post('/auth/register', userData); // Use existing register endpoint
+    const response = await api.post('/auth/register', userData);
     return response.data;
   },
 };
@@ -418,9 +441,14 @@ export const mpesaAPI = {
 
 // Farmers API
 export const farmersAPI = {
-  submitProduct: async (productData: ProductRequest) => {
-    const response = await api.post('/farmer/products', productData);
-    return response.data;
+  submitProduct: async (productData: any) => {
+    try {
+      const response = await api.post('/farmer/products', productData);
+      return response.data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
   },
   
   getMyProducts: async () => {

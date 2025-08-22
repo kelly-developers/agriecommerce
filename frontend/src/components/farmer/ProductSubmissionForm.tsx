@@ -1,89 +1,56 @@
-import { useState, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { farmersAPI } from '@/services/api';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, ImagePlus, Link, X } from 'lucide-react';
 import { categories } from '@/data/products';
+import { Product } from '@/types/product';
+import { productsAPI } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
+import { ImagePlus, Link, X } from 'lucide-react';
 
-const productSchema = z.object({
-  name: z.string().min(1, 'Product name is required'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
-  price: z.number().min(0, 'Price must be positive'),
-  category: z.string().min(1, 'Category is required'),
-  subcategory: z.string().optional(),
-  stock: z.number().min(1, 'Stock must be at least 1'),
-  origin: z.string().min(1, 'Origin is required'),
-  nutritionalInfo: z.string().optional(),
-  isOrganic: z.boolean(),
-  unitType: z.enum(['kg', 'bunch', 'piece', 'packet', 'kit', 'unit']),
-  imageUrl: z.string().url('Please provide a valid image URL').optional(),
-  imageFile: z.any().optional()
-}).refine(data => data.imageUrl || data.imageFile, {
-  message: "Either image URL or file is required",
-  path: ["imageUrl"]
-});
-
-type ProductFormData = z.infer<typeof productSchema>;
-
-interface ProductSubmissionFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onProductSubmitted: () => void;
+interface ProductFormProps {
+  onClose: () => void;
+  onSuccess: () => void;
+  product?: Product;
 }
 
-const unitTypes = [
-  { value: 'kg', label: 'Kilogram (kg)' },
-  { value: 'bunch', label: 'Bunch' },
-  { value: 'piece', label: 'Piece' },
-  { value: 'packet', label: 'Packet' },
-  { value: 'kit', label: 'Kit' },
-  { value: 'unit', label: 'Unit' }
-];
-
-export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }: ProductSubmissionFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showUrlInput, setShowUrlInput] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+export function ProductForm({ onClose, onSuccess, product }: ProductFormProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const form = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      price: 0,
-      category: '',
-      subcategory: '',
-      stock: 1,
-      origin: '',
-      nutritionalInfo: '',
-      isOrganic: false,
-      unitType: 'kg',
-      imageUrl: '',
-      imageFile: null
-    }
+  const [formData, setFormData] = useState({
+    name: product?.name || '',
+    description: product?.description || '',
+    price: product?.price || '',
+    category: product?.category || '',
+    subcategory: product?.subcategory || '',
+    stock: product?.stock || '',
+    origin: product?.origin || '',
+    nutritionalInfo: product?.nutritionalInfo || '',
+    isOrganic: product?.isOrganic || false,
+    unitType: (product?.unitType || 'kg') as 'kg' | 'bunch' | 'piece' | 'packet' | 'kit' | 'unit',
+    imageUrl: product?.imageUrl || ''
   });
 
-  const selectedCategory = categories.find(cat => cat.id === form.watch('category'));
+  useEffect(() => {
+    if (product?.imageUrl) {
+      setImagePreview(product.imageUrl);
+    }
+  }, [product]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      form.setValue('imageFile', file);
-      form.setValue('imageUrl', '');
+      setImageFile(file);
       setShowUrlInput(false);
-      form.clearErrors('imageUrl');
+      setFormData(prev => ({ ...prev, imageUrl: '' }));
       
       const reader = new FileReader();
       reader.onload = () => {
@@ -94,22 +61,17 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
   };
 
   const handleRemoveImage = () => {
-    form.setValue('imageFile', null);
-    form.setValue('imageUrl', '');
+    setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    form.setError('imageUrl', { type: 'manual', message: 'Either image URL or file is required' });
   };
 
   const uploadImage = async (file: File) => {
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      const response = await farmersAPI.uploadImage(formData);
-      return response.imageUrl;
+      const response = await productsAPI.uploadImage(file);
+      return response.imageUrl; // Assuming your API returns { imageUrl: string }
     } catch (error) {
       console.error('Image upload failed:', error);
       toast({
@@ -121,394 +83,270 @@ export function ProductSubmissionForm({ open, onOpenChange, onProductSubmitted }
     }
   };
 
-  const onSubmit = async (data: ProductFormData) => {
-    // Validate form before submission
-    const isValid = await form.trigger();
-    if (!isValid) {
-      console.log('Form validation errors:', form.formState.errors);
-      return;
-    }
-
-    setIsSubmitting(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploading(true);
+    
     try {
-      let imageUrl = data.imageUrl;
+      let imageUrl = formData.imageUrl;
       
-      if (data.imageFile) {
-        console.log('Uploading image file...');
-        imageUrl = await uploadImage(data.imageFile);
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
       }
 
       const productData = {
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        category: data.category,
-        subcategory: data.subcategory,
-        stock: data.stock,
-        origin: data.origin,
-        nutritionalInfo: data.nutritionalInfo,
-        isOrganic: data.isOrganic,
-        unitType: data.unitType,
-        imageUrl
+        ...formData,
+        price: Number(formData.price),
+        stock: Number(formData.stock),
+        imageUrl: imageUrl || undefined
       };
 
-      console.log('Submitting product data:', productData);
-      await farmersAPI.submitProduct(productData);
+      if (product) {
+        await productsAPI.update(product.id, productData);
+        toast({
+          title: "Success",
+          description: "Product updated successfully"
+        });
+      } else {
+        await productsAPI.create(productData);
+        toast({
+          title: "Success", 
+          description: "Product created successfully"
+        });
+      }
       
-      toast({
-        title: "Success",
-        description: "Product submitted for review successfully!"
-      });
-      
-      // Reset form and close dialog
-      form.reset();
-      setImagePreview(null);
-      onProductSubmitted();
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error('Submission error:', error);
+      onSuccess();
+      onClose();
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to submit product",
+        description: `Failed to ${product ? 'update' : 'create'} product`,
         variant: "destructive"
       });
     } finally {
-      setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
+  const selectedCategory = categories.find(cat => cat.id === formData.category);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Submit New Product for Review</DialogTitle>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Image Upload Section */}
-            <div className="space-y-2">
-              <Label>Product Image</Label>
-              <div className="flex flex-col gap-4">
-                {imagePreview ? (
-                  <div className="relative group">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-48 object-contain rounded-md border bg-muted"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 rounded-full bg-background/80 hover:bg-background"
-                      onClick={handleRemoveImage}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center w-full h-48 border-2 border-dashed rounded-md bg-muted/50">
-                    <span className="text-muted-foreground">No image selected</span>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <ImagePlus className="w-4 h-4 mr-2" />
-                    Upload Image
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      setShowUrlInput(!showUrlInput);
-                      if (form.getValues('imageFile')) handleRemoveImage();
-                    }}
-                  >
-                    <Link className="w-4 h-4 mr-2" />
-                    {showUrlInput ? 'Hide URL' : 'Use URL'}
-                  </Button>
-                </div>
-
-                {showUrlInput && (
-                  <FormField
-                    control={form.control}
-                    name="imageUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image URL</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://example.com/image.jpg"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-                {!imagePreview && !form.watch('imageUrl') && (
-                  <p className="text-sm text-destructive">
-                    Please upload an image or provide an image URL
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter product name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Image Upload Section */}
+      <div className="space-y-2">
+        <Label>Product Image</Label>
+        <div className="flex flex-col gap-4">
+          {imagePreview ? (
+            <div className="relative group">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-full h-48 object-contain rounded-md border bg-muted"
               />
-
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Describe your product..." 
-                      className="min-h-[100px]"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price (KSH)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          field.onChange(isNaN(value) ? 0 : value);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="stock"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Stock Quantity</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        placeholder="1"
-                        {...field}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          field.onChange(isNaN(value) ? 1 : value);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="unitType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unit Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select unit" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {unitTypes.map((unit) => (
-                          <SelectItem key={unit.value} value={unit.value}>
-                            {unit.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="origin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Origin/Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Nakuru County" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="subcategory"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subcategory</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value}
-                      disabled={!selectedCategory}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select subcategory" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {selectedCategory?.subcategories?.map((subcategory) => (
-                          <SelectItem key={subcategory.id} value={subcategory.id}>
-                            {subcategory.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="nutritionalInfo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nutritional Information (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Nutritional benefits and information..."
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="isOrganic"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Organic Product</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      Is this product organically grown?
-                    </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  form.reset();
-                  setImagePreview(null);
-                  onOpenChange(false);
-                }}
-                disabled={isSubmitting}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 rounded-full bg-background/80 hover:bg-background"
+                onClick={handleRemoveImage}
               >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Submit for Review
+                <X className="w-4 h-4" />
               </Button>
             </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          ) : (
+            <div className="flex items-center justify-center w-full h-48 border-2 border-dashed rounded-md bg-muted/50">
+              <span className="text-muted-foreground">No image selected</span>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <ImagePlus className="w-4 h-4 mr-2" />
+              Upload Image
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                setShowUrlInput(!showUrlInput);
+                if (imageFile) handleRemoveImage();
+              }}
+            >
+              <Link className="w-4 h-4 mr-2" />
+              {showUrlInput ? 'Hide URL' : 'Use URL'}
+            </Button>
+          </div>
+
+          {showUrlInput && (
+            <div className="space-y-1">
+              <Label htmlFor="imageUrl">Image URL</Label>
+              <Input
+                id="imageUrl"
+                type="url"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Product Details Section */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Product Name</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="price">Price (KSh)</Label>
+          <Input
+            id="price"
+            type="number"
+            value={formData.price}
+            onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+            required
+            min="0"
+            step="0.01"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          rows={3}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value, subcategory: '' }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="subcategory">Subcategory</Label>
+          <Select 
+            value={formData.subcategory} 
+            onValueChange={(value) => setFormData(prev => ({ ...prev, subcategory: value }))}
+            disabled={!selectedCategory}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select subcategory" />
+            </SelectTrigger>
+            <SelectContent>
+              {selectedCategory?.subcategories.map((subcategory) => (
+                <SelectItem key={subcategory.id} value={subcategory.id}>
+                  {subcategory.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="stock">Stock</Label>
+          <Input
+            id="stock"
+            type="number"
+            value={formData.stock}
+            onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+            required
+            min="0"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="unitType">Unit Type</Label>
+          <Select value={formData.unitType} onValueChange={(value: 'kg' | 'bunch' | 'piece' | 'packet' | 'kit' | 'unit') => setFormData(prev => ({ ...prev, unitType: value }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="kg">Kilogram</SelectItem>
+              <SelectItem value="bunch">Bunch</SelectItem>
+              <SelectItem value="piece">Piece</SelectItem>
+              <SelectItem value="packet">Packet</SelectItem>
+              <SelectItem value="kit">Kit</SelectItem>
+              <SelectItem value="unit">Unit</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="origin">Origin</Label>
+          <Input
+            id="origin"
+            value={formData.origin}
+            onChange={(e) => setFormData(prev => ({ ...prev, origin: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="nutritionalInfo">Nutritional Information</Label>
+        <Input
+          id="nutritionalInfo"
+          value={formData.nutritionalInfo}
+          onChange={(e) => setFormData(prev => ({ ...prev, nutritionalInfo: e.target.value }))}
+          placeholder="Rich in vitamins, minerals..."
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="isOrganic"
+          checked={formData.isOrganic}
+          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isOrganic: checked }))}
+        />
+        <Label htmlFor="isOrganic">Organic Product</Label>
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isUploading}>
+          {isUploading ? 'Processing...' : product ? 'Update Product' : 'Create Product'}
+        </Button>
+      </div>
+    </form>
   );
 }
