@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { ProductForm } from '@/components/admin/ProductForm'; // This is what you actually have
+import { ProductSubmissionForm } from '@/components/farmer/ProductSubmissionForm';
 import { MyProducts } from '@/components/farmer/MyProducts';
 import { useAuth } from '@/contexts/AuthContext';
 import { farmersAPI } from '@/services/api';
@@ -204,13 +204,12 @@ const FarmerDashboard = () => {
           </TabsContent>
         </Tabs>
 
-        {/* FIXED: Changed ProductSubmissionForm to ProductForm */}
-        {showForm && (
-          <ProductForm
-            onClose={() => setShowForm(false)}
-            onSuccess={handleProductSubmitted}
-          />
-        )}
+        {/* Use the new ProductSubmissionForm component */}
+        <ProductSubmissionForm
+          open={showForm}
+          onOpenChange={setShowForm}
+          onProductSubmitted={handleProductSubmitted}
+        />
       </div>
     </Layout>
   );
