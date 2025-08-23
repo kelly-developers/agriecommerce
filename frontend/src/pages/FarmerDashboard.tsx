@@ -15,7 +15,7 @@ interface ProductSubmission {
   name: string;
   description: string;
   price: number;
-  image: string;
+  imageUrl: string;
   category: string;
   subcategory?: string;
   stock: number;
@@ -23,10 +23,12 @@ interface ProductSubmission {
   nutritionalInfo?: string;
   isOrganic: boolean;
   unitType: 'kg' | 'bunch' | 'piece' | 'packet' | 'kit' | 'unit';
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'INACTIVE' | 'OUT_OF_STOCK';
   submittedAt: string;
   reviewedAt?: string;
   rejectionReason?: string;
+  farmerId: string;
+  farmerName: string;
 }
 
 const FarmerDashboard = () => {
@@ -45,14 +47,15 @@ const FarmerDashboard = () => {
   const loadProducts = async () => {
     try {
       const response = await farmersAPI.getMyProducts();
-      console.log('API Products Response:', response.data);
-
+      
       let productsData: ProductSubmission[] = [];
 
-      if (Array.isArray(response.data)) {
+      if (Array.isArray(response)) {
+        productsData = response;
+      } else if (Array.isArray(response?.data)) {
         productsData = response.data;
-      } else if (Array.isArray(response.data?.products)) {
-        productsData = response.data.products;
+      } else if (Array.isArray(response?.products)) {
+        productsData = response.products;
       }
 
       // Ensure it's always an array
@@ -62,9 +65,9 @@ const FarmerDashboard = () => {
 
       setProducts(productsData);
 
-      const pending = productsData.filter(p => p.status === 'pending').length;
-      const approved = productsData.filter(p => p.status === 'approved').length;
-      const rejected = productsData.filter(p => p.status === 'rejected').length;
+      const pending = productsData.filter(p => p.status === 'PENDING').length;
+      const approved = productsData.filter(p => p.status === 'APPROVED' || p.status === 'ACTIVE').length;
+      const rejected = productsData.filter(p => p.status === 'REJECTED').length;
 
       setStats({
         pending,
@@ -74,7 +77,7 @@ const FarmerDashboard = () => {
       });
 
     } catch (error) {
-      console.error(error);
+      console.error('Error loading products:', error);
       toast({
         title: "Error",
         description: "Failed to load your products",
@@ -184,21 +187,21 @@ const FarmerDashboard = () => {
 
           <TabsContent value="pending">
             <MyProducts
-              products={(products || []).filter(p => p.status === 'pending')}
+              products={(products || []).filter(p => p.status === 'PENDING')}
               onProductUpdate={loadProducts}
             />
           </TabsContent>
 
           <TabsContent value="approved">
             <MyProducts
-              products={(products || []).filter(p => p.status === 'approved')}
+              products={(products || []).filter(p => p.status === 'APPROVED' || p.status === 'ACTIVE')}
               onProductUpdate={loadProducts}
             />
           </TabsContent>
 
           <TabsContent value="rejected">
             <MyProducts
-              products={(products || []).filter(p => p.status === 'rejected')}
+              products={(products || []).filter(p => p.status === 'REJECTED')}
               onProductUpdate={loadProducts}
             />
           </TabsContent>

@@ -39,7 +39,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <Button variant="ghost" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user?.firstName[0]}{user?.lastName[0]}
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden sm:block text-left">

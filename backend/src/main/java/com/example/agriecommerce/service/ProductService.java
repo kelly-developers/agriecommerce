@@ -4,6 +4,7 @@ import com.example.agriecommerce.dto.request.ProductRequest;
 import com.example.agriecommerce.dto.response.ProductResponse;
 import com.example.agriecommerce.exception.ResourceNotFoundException;
 import com.example.agriecommerce.model.Product;
+import com.example.agriecommerce.model.ProductStatus;
 import com.example.agriecommerce.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,8 @@ public class ProductService {
     }
 
     public List<ProductResponse> getAllProducts() {
-        return productRepository.findAll().stream()
+        return productRepository.findByStatusIn(List.of(ProductStatus.APPROVED, ProductStatus.ACTIVE))
+                .stream()
                 .map(this::mapToProductResponse)
                 .collect(Collectors.toList());
     }

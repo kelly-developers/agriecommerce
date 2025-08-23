@@ -11,7 +11,6 @@ import com.example.agriecommerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,7 +37,7 @@ public class FarmerService {
         product.setOrganic(request.isOrganic());
         product.setUnitType(request.getUnitType());
         product.setFarmer(farmer);
-        // REMOVED: product.setStatus(ProductStatus.PENDING); - Let the entity default handle it
+        product.setStatus(ProductStatus.PENDING); // Set status to pending
 
         Product savedProduct = productRepository.save(product);
         return mapToProductResponse(savedProduct);
@@ -99,7 +98,7 @@ public class FarmerService {
                 .stock(product.getStock())
                 .origin(product.getOrigin())
                 .nutritionalInfo(product.getNutritionalInfo())
-                .isOrganic(product.isOrganic())
+                .isOrganic(product.getOrganic())
                 .unitType(product.getUnitType())
                 .status(product.getStatus().name())
                 .rejectionReason(product.getRejectionReason())

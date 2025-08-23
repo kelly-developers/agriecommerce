@@ -525,6 +525,21 @@ export const adminAPI = {
   getOrderStatusDistribution: async () => {
     const response = await api.get('/admin/analytics/order-status-distribution');
     return response.data;
+  },
+
+    getPendingProducts: async (): Promise<Product[]> => {
+    const response = await api.get('/admin/products/pending');
+    return response.data;
+  },
+  
+  approveProduct: async (id: string): Promise<Product> => {
+    const response = await api.post(`/admin/products/${id}/approve`);
+    return response.data;
+  },
+  
+  rejectProduct: async (id: string, reason: string): Promise<Product> => {
+    const response = await api.post(`/admin/products/${id}/reject`, { reason });
+    return response.data;
   }
 };
 

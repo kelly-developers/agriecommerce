@@ -1,6 +1,7 @@
 package com.example.agriecommerce.repository;
 
 import com.example.agriecommerce.model.Product;
+import com.example.agriecommerce.model.ProductStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -37,4 +38,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByFarmerId(Long farmerId);
 
     Optional<Product> findByIdAndFarmerId(Long id, Long farmerId);
+
+
+    List<Product> findByStatus(ProductStatus status);
+
+    List<Product> findByFarmerIdAndStatus(Long farmerId, ProductStatus status);
+    List<Product> findByStatusIn(List<ProductStatus> statuses);
+
+
+    long countByStatus(ProductStatus status);
+
 }
