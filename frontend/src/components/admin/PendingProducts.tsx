@@ -17,7 +17,7 @@ interface ProductSubmission {
   name: string;
   description: string;
   price: number;
-  image: string;
+  imageUrl: string;
   category: string;
   subcategory?: string;
   stock: number;
@@ -25,12 +25,12 @@ interface ProductSubmission {
   nutritionalInfo?: string;
   isOrganic: boolean;
   unitType: 'kg' | 'bunch' | 'piece' | 'packet' | 'kit' | 'unit';
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'INACTIVE';
   submittedAt: string;
   reviewedAt?: string;
   rejectionReason?: string;
   farmerName: string;
-  farmerEmail: string;
+  farmerEmail?: string;
 }
 
 export function PendingProducts() {
@@ -47,13 +47,29 @@ export function PendingProducts() {
 
   const loadPendingProducts = async () => {
     try {
+      // FIX: The API might return the array directly, not wrapped in a data property
       const response = await adminAPI.getPendingProducts();
-      setProducts(response.data);
-      setFilteredProducts(response.data);
-    } catch (error) {
+      
+      // Handle different response structures
+      let productsData: ProductSubmission[] = [];
+      
+      if (Array.isArray(response)) {
+        productsData = response;
+      } else if (Array.isArray(response?.data)) {
+        productsData = response.data;
+      } else if (Array.isArray(response?.products)) {
+        productsData = response.products;
+      }
+      
+      console.log('Pending products:', productsData);
+      
+      setProducts(productsData);
+      setFilteredProducts(productsData);
+    } catch (error: any) {
+      console.error('Failed to load pending products:', error);
       toast({
         title: "Error",
-        description: "Failed to load pending products",
+        description: error.response?.data?.message || "Failed to load pending products",
         variant: "destructive"
       });
     } finally {
@@ -196,7 +212,7 @@ export function PendingProducts() {
                   <TableRow key={product.id}>
                     <TableCell>
                       <img 
-                        src={product.image} 
+                        src={product.imageUrl || '/placeholder.svg'} 
                         alt={product.name}
                         className="w-12 h-12 object-cover rounded-md cursor-pointer"
                         onClick={() => viewProduct(product)}
@@ -221,7 +237,9 @@ export function PendingProducts() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{product.farmerName}</p>
-                        <p className="text-sm text-muted-foreground">{product.farmerEmail}</p>
+                        {product.farmerEmail && (
+                          <p className="text-sm text-muted-foreground">{product.farmerEmail}</p>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -289,7 +307,7 @@ export function PendingProducts() {
             <div className="space-y-4">
               <div className="flex gap-4">
                 <img 
-                  src={selectedProduct.image} 
+                  src={selectedProduct.imageUrl || '/placeholder.svg'} 
                   alt={selectedProduct.name}
                   className="w-32 h-32 object-cover rounded-lg"
                   onError={(e) => {
@@ -331,11 +349,22 @@ export function PendingProducts() {
                 <div>
                   <span className="font-semibold">Farmer:</span> {selectedProduct.farmerName}
                 </div>
-                <div>
-                  <span className="font-semibold">Email:</span> {selectedProduct.farmerEmail}
-                </div>
+                {selectedProduct.farmerEmail && (
+                  <div>
+                    <span className="font-semibold">Email:</span> {selectedProduct.farmerEmail}
+                  </div>
+                )}
                 <div>
                   <span className="font-semibold">Submitted:</span> {format(new Date(selectedProduct.submittedAt), 'MMM dd, yyyy HH:mm')}
+                </div>
+                <div>
+                  <span className="font-semibold">Status:</span> 
+                  <Badge 
+                    variant={selectedProduct.status === 'PENDING' ? 'secondary' : 'outline'}
+                    className="ml-2"
+                  >
+                    {selectedProduct.status}
+                  </Badge>
                 </div>
               </div>
             </div>
