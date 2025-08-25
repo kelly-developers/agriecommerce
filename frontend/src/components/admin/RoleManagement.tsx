@@ -45,13 +45,37 @@ export function RoleManagement() {
     try {
       setLoading(true);
       const response = await usersAPI.getAllAdmin();
-      setUsers(response.data || response);
+      
+      // Handle different response formats
+      // If response is paginated (has content property)
+      if (response.data && Array.isArray(response.data.content)) {
+        setUsers(response.data.content);
+      } 
+      // If response is paginated (has content property at root level)
+      else if (Array.isArray(response.content)) {
+        setUsers(response.content);
+      }
+      // If response is a simple array
+      else if (Array.isArray(response.data)) {
+        setUsers(response.data);
+      }
+      // If response is an array directly
+      else if (Array.isArray(response)) {
+        setUsers(response);
+      }
+      // Fallback to empty array
+      else {
+        console.error('Unexpected API response format:', response);
+        setUsers([]);
+      }
     } catch (error) {
+      console.error('Error loading users:', error);
       toast({
         title: "Error",
         description: "Failed to load users",
         variant: "destructive",
       });
+      setUsers([]);
     } finally {
       setLoading(false);
     }
