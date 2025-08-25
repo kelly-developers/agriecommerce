@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
-import { adminAPI } from '@/services/api'; // Updated import path
+import { adminAPI } from '@/services/api';
 import { RecentOrdersChart } from './charts/RecentOrdersChart';
 import { RevenueByCategoryChart } from './charts/RevenueByCategoryChart';
 import { SalesTrendChart } from './charts/SalesTrendChart';
@@ -28,12 +28,29 @@ export function AnalyticsDashboard() {
     queryFn: () => adminAPI.getOrderStatusDistribution()
   });
 
-  const { data: productStats, isLoading: productsLoading } = useQuery({
-    queryKey: ['product-stats'],
-    queryFn: () => adminAPI.getProductStats()
-  });
+  const isLoading = ordersLoading || revenueLoading || salesLoading || statusLoading;
 
-  const isLoading = ordersLoading || revenueLoading || salesLoading || statusLoading || productsLoading;
+  // Debug: Log the API responses to understand their structure
+  console.log('Recent Orders:', recentOrders);
+  console.log('Revenue by Category:', revenueByCategory);
+  console.log('Sales Trend:', salesTrend);
+  console.log('Order Status:', orderStatus);
+
+  // Safely extract data from API responses
+  const recentOrdersData = Array.isArray(recentOrders?.data) 
+    ? recentOrders.data 
+    : Array.isArray(recentOrders) 
+      ? recentOrders 
+      : [];
+
+  const revenueByCategoryData = Array.isArray(revenueByCategory?.data) 
+    ? revenueByCategory.data 
+    : Array.isArray(revenueByCategory) 
+      ? revenueByCategory 
+      : [];
+
+  const salesTrendData = salesTrend?.data || salesTrend || {};
+  const orderStatusData = orderStatus?.data || orderStatus || {};
 
   if (isLoading) {
     return (
@@ -59,7 +76,7 @@ export function AnalyticsDashboard() {
           <CardTitle>Recent Orders</CardTitle>
         </CardHeader>
         <CardContent>
-          <RecentOrdersChart data={recentOrders || []} />
+          <RecentOrdersChart data={recentOrdersData} />
         </CardContent>
       </Card>
 
@@ -68,7 +85,7 @@ export function AnalyticsDashboard() {
           <CardTitle>Revenue by Category</CardTitle>
         </CardHeader>
         <CardContent>
-          <RevenueByCategoryChart data={revenueByCategory || []} />
+          <RevenueByCategoryChart data={revenueByCategoryData} />
         </CardContent>
       </Card>
 
@@ -77,7 +94,7 @@ export function AnalyticsDashboard() {
           <CardTitle>Sales Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          <SalesTrendChart data={salesTrend || {}} />
+          <SalesTrendChart data={salesTrendData} />
         </CardContent>
       </Card>
 
@@ -86,7 +103,7 @@ export function AnalyticsDashboard() {
           <CardTitle>Order Status Distribution</CardTitle>
         </CardHeader>
         <CardContent>
-          <OrderStatusPieChart data={orderStatus || {}} />
+          <OrderStatusPieChart data={orderStatusData} />
         </CardContent>
       </Card>
     </div>
