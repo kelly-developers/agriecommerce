@@ -34,7 +34,7 @@ const Index = () => {
         categoriesAPI.getAll()
       ]);
       
-      setProducts(productsData.products || productsData);
+      setProducts(productsData);
       setCategories(categoriesData || []);
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -51,7 +51,7 @@ const Index = () => {
       setLoading(true);
       const params = { category: selectedCategory };
       const response = await productsAPI.getAll(params);
-      setProducts(response.products || response);
+      setProducts(response);
     } catch (error) {
       console.error('Failed to load products:', error);
       setError('Failed to load products. Please try again.');
@@ -68,7 +68,7 @@ const Index = () => {
     setSelectedCategory(categoryId);
   };
 
-  const handleAddToCart = (product: any) => {
+  const handleAddToCart = (product: Product) => {
     addToCart(product);
     toast({
       title: "Added to cart",

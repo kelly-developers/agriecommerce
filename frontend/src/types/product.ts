@@ -3,14 +3,23 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  image: string;
+  imageUrl: string; // Changed from 'image' to 'imageUrl'
   category: string;
   subcategory?: string;
   stock: number;
-  origin: string;
+  origin?: string;
   nutritionalInfo?: string;
   isOrganic: boolean;
   unitType: 'kg' | 'bunch' | 'piece' | 'packet' | 'kit' | 'unit';
+  status?: string;
+  rejectionReason?: string;
+  submittedAt?: string;
+  reviewedAt?: string;
+  farmerId?: string;
+  farmerName?: string;
+  totalProducts?: number;
+  outOfStock?: number;
+  lowStock?: number;
 }
 
 export interface CartItem {

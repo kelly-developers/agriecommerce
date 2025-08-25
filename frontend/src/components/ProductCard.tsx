@@ -11,14 +11,26 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
+  // Ensure image URL is properly formatted
+  const getImageUrl = (url: string) => {
+    if (!url) return '/placeholder-image.jpg';
+    if (url.startsWith('http')) return url;
+    // If it's a relative path, make sure it's properly formatted
+    return url.startsWith('/') ? url : `/${url}`;
+  };
+
   return (
     <Card className="group hover:shadow-md transition-all duration-200 overflow-hidden border border-border/50 hover:border-primary/20 w-full max-w-[180px] sm:max-w-[200px]">
       <Link to={`/product/${product.id}`}>
         <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted/30 to-muted/10">
           <img
-            src={product.image}
+            src={getImageUrl(product.imageUrl)}
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              // Fallback if image fails to load
+              (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
+            }}
           />
         </div>
       </Link>

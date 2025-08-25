@@ -200,7 +200,28 @@ export const productsAPI = {
     sort?: string;
   }) => {
     const response = await api.get('/products', { params });
-    return response.data;
+    
+    // Handle different response formats
+    let productsData = response.data;
+    
+    // If response has a products array
+    if (productsData && Array.isArray(productsData.products)) {
+      productsData = productsData.products;
+    }
+    // If response is paginated with content
+    else if (productsData && Array.isArray(productsData.content)) {
+      productsData = productsData.content;
+    }
+    // If response is already an array
+    else if (Array.isArray(productsData)) {
+      productsData = productsData;
+    }
+    // Fallback to empty array
+    else {
+      productsData = [];
+    }
+    
+    return productsData;
   },
   
   getById: async (id: string) => {
